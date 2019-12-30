@@ -10,9 +10,37 @@ ifeq ($(origin .RECIPEPREFIX), undefined)
 endif
 .RECIPEPREFIX = >
 
+export GO111MODULE := on
+ROOTDIR := $(shell pwd)
+VENDORDIR := $(ROOTDIR)/vendor
 GO := go
 QUIET=@
-pkgs = $(shell $(GO) list ./... | grep -v vendor)
+VERIFYARGS ?=
+pkgs = $(shell $(GO) list ./cmd/... | grep -v vendor)
+
+define generate_k8s_api
+	$(QUIET)bash $(VENDORDIR)/k8s.io/code-generator/generate-groups.sh \
+		$(1) \
+	    github.com/dgraph-io/dgraph-operator/pkg/client \
+	    $(2) \
+	    $(3) \
+	    --go-header-file "$(ROOTDIR)/contrib/tools/codegen/custom-k8s-header-boilerplate.go.txt" \
+		$(VERIFYARGS)
+endef
+
+define generate_k8s_api_all
+	$(call generate_k8s_api,all,$(1),$(2))
+endef
+
+define generate_k8s_api_deepcopy
+	$(call generate_k8s_api,deepcopy,$(1),$(2))
+endef
+
+generate-k8s-api:
+> $(call generate_k8s_api_all,github.com/dgraph-io/dgraph-operator/pkg/apis,"dgraph.io:v1alpha1")
+
+verify-generated-k8s-api:
+> @${MAKE} -B -s VERIFYARGS=--verify-only generate-k8s-api
 
 build:
 > $(QUIET)echo "[*] Building dgraph-operator"
@@ -38,4 +66,4 @@ check_cmdref: build
 > $(QUIET)echo "[*] Checking dgraph opeartor command line reference."
 > $(QUIET)./contrib/scripts/cmdref_check.sh
 
-.PHONY: build format govet check_lint generate_cmdref check_cmdref
+.PHONY: build format govet check_lint generate_cmdref check_cmdref generate-k8s-api verify-generated-k8s-api

@@ -17,21 +17,25 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
+	"github.com/dgraph-io/dgraph-operator/pkg/defaults"
+	"github.com/dgraph-io/dgraph-operator/pkg/option"
+	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
+var operatorConfigFile string
 var rootCmd = &cobra.Command{
 	Use:   "dgraph-operator",
 	Short: "Dgraph Operator creates/configures/manages Dgraph clusters atop Kubernetes.",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := cmd.Help(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		glog.Infof("starting dgraph operator")
+		RunOperator()
 	},
 }
 
@@ -43,6 +47,62 @@ func main() {
 }
 
 func init() {
+	rootFlags := rootCmd.Flags()
+	rootFlags.BoolVar(&option.OperatorConfig.SkipCRDCreation,
+		"skip-crd", false, "Skip kubernetes custom resource definition creation.")
+	rootFlags.StringVar(&operatorConfigFile,
+		"config-file", "", "Configuration file. Takes precedence over default values, but is "+
+			"overridden to values set with environment variables and flags.")
+	rootFlags.StringVar(&option.OperatorConfig.KubeCfgPath, "kubecfg-path", "", "Path of kubeconfig file.")
+	rootFlags.StringVar(&option.OperatorConfig.K8sAPIServerURL, "k8s-api-server-url", "", "URL of the kubernetes API server.")
+	rootFlags.StringVar(&option.OperatorConfig.Server.Host, "server.host", defaults.OperatorHost, "Host to listen on.")
+	rootFlags.IntVar(&option.OperatorConfig.Server.Port, "server.port", defaults.OperatorPort, "Port to listen on.")
+
+	// Convinces glog that Parse() has been called to avoid noisy logs.
+	// https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
+	flag.CommandLine.Parse([]string{})
+
+	// Add all existing global flag (eg: from glog) to rootCmd's flags
+	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+
+	rootCmd.PersistentFlags().Set("stderrthreshold", "0")
+
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(cmdRefCmd)
+
+	viper.BindPFlags(rootFlags)
+	cobra.OnInitialize(initCmds)
+}
+
+func initCmds() {
+	if operatorConfigFile == "" {
+		return
+	}
+
+	viper.SetConfigFile(operatorConfigFile)
+	viper.SetEnvPrefix("DGRAPH_OPERATOR")
+	viper.AutomaticEnv()
+
+	var err error
+	if err = viper.ReadInConfig(); err == nil {
+		glog.Infof("using config file: %s", viper.ConfigFileUsed())
+	}
+
+	setGlogFlags()
+}
+
+func setGlogFlags() {
+	glogFlags := [...]string{
+		"log_dir", "logtostderr", "alsologtostderr", "v",
+		"stderrthreshold", "vmodule", "log_backtrace_at",
+	}
+	for _, gflag := range glogFlags {
+		// Set value of flag to the value in config
+		if stringValue, ok := viper.Get(gflag).(string); ok {
+			if gflag == "log_backtrace_at" && stringValue == ":0" {
+				continue
+			}
+			flag.Lookup(gflag).Value.Set(stringValue)
+		}
+	}
 }
