@@ -12,7 +12,10 @@ var rootCmd = &cobra.Command{
 	Short: "Dgraph Operator creates/configures/manages Dgraph clusters atop Kubernetes.",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		if err := cmd.Help(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
