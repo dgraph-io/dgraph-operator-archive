@@ -14,10 +14,11 @@ var versionCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf(version.VersionFormatStr,
-			version.Info["version"],
-			version.Info["revision"],
+			version.Info["apiVersion"],
+			version.Info["operatorVersion"],
+			version.Info["commitSHA"],
+			version.Info["commitTimestamp"],
 			version.Info["branch"],
-			version.Info["buildDate"],
 			version.Info["goVersion"])
 		os.Exit(0)
 	},

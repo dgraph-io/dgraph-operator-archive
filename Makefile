@@ -18,10 +18,6 @@ build:
 > $(QUIET)echo "[*] Building dgraph-operator"
 > $(QUIET)./contrib/scripts/build.sh
 
-check_format:
-> $(QUIET)echo "[*] Checking for formatting errors using gofmt"
-> $(QUIET)./contrib/scripts/check_format.sh
-
 format:
 > $(QUIET)echo "[*] Formatting code"
 > $(QUIET)$(GO) fmt $(pkgs)
@@ -30,4 +26,4 @@ govet:
 > $(QUIET)echo "[*] Vetting code, checking for mistakes"
 > $(QUIET)$(GO) vet $(pkgs)
 
-.PHONY: build check_format format govet
+.PHONY: build format govet
