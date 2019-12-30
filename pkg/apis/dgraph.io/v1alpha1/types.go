@@ -56,7 +56,7 @@ type DgraphClusterSpec struct {
 
 // DgraphClusterStatus represents the status of a DgraphCluster.
 type DgraphClusterStatus struct {
-	// Members is the Cilium policy status for each dgraph cluster member.
+	// Members is the status for each dgraph cluster member.
 	Members map[string]DgraphClusterMemberStatus `json:"members,omitempty"`
 }
 
