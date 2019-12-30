@@ -20,22 +20,29 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dgraph-io/dgraph-operator/version"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Display the version of the current build of dgraph operator.",
+var cmdRefDir string
+
+// cmdRefCmd is the operator command to generate command line reference docs using
+// spf13/cobra/doc
+var cmdRefCmd = &cobra.Command{
+	Use:   "cmdref",
+	Short: "Generate command line reference for dgraph operator command line interface.",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf(version.VersionFormatStr,
-			version.Info["apiVersion"],
-			version.Info["operatorVersion"],
-			version.Info["commitSHA"],
-			version.Info["commitTimestamp"],
-			version.Info["branch"],
-			version.Info["goVersion"])
-		os.Exit(0)
+		fmt.Printf("generating command line reference documentation in directory: %s\n", cmdRefDir)
+		err := doc.GenMarkdownTree(rootCmd, cmdRefDir)
+		if err != nil {
+			fmt.Printf("error while generating cmdref: %s\n", err)
+			os.Exit(1)
+		}
 	},
+}
+
+func init() {
+	cmdRefCmd.Flags().StringVarP(&cmdRefDir, "directory", "d",
+		"docs/cmdref/", "Directory to use for creating cmd reference docs.")
 }
