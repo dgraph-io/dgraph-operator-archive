@@ -50,22 +50,22 @@ build:
 
 format:
 > $(QUIET)echo "[*] Formatting code"
-> $(QUIET)$(GO) fmt -s -w $(pkgs)
+> $(QUIET)$(GO) fmt $(pkgs)
 
 govet:
 > $(QUIET)echo "[*] Vetting code, checking for mistakes"
 > $(QUIET)$(GO) vet $(pkgs)
 
-check_lint:
+check-lint:
 > $(QUIET)echo "[*] Checking lint errors using golangci-lint"
 > $(QUIET)golangci-lint run ./cmd/...
 
-generate_cmdref: build
+generate-cmdref: build
 > $(QUIET)echo "[*] Generating cmdref for dgraph-operator"
 > $(QUIET)./dgraph-operator cmdref --directory=./docs/cmdref
 
-check_cmdref: build
+check-cmdref: build
 > $(QUIET)echo "[*] Checking dgraph opeartor command line reference."
 > $(QUIET)./contrib/scripts/cmdref_check.sh
 
-.PHONY: build format govet check_lint generate_cmdref check_cmdref generate-k8s-api verify-generated-k8s-api
+.PHONY: build format govet check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api
