@@ -32,21 +32,21 @@ import (
 // These client wrappers are necessery to add function specific to dgraph operator
 // like annotating each resource with DgraphCluster ID etc.
 
-// K8sClient is a wrapper around kubernetes.Interface.
-type K8sClient struct {
+// ClientK8s is a wrapper around kubernetes.Interface.
+type ClientK8s struct {
 	// kubernetes.Interface is the object through which interactions with
 	// Kubernetes are performed.
 	kubernetes.Interface
 }
 
-// K8sDgraphClient is a wrapper around clientset.Interface for dgraph
+// DgraphClientK8s is a wrapper around clientset.Interface for dgraph
 // operator kubernetes client.
-type K8sDgraphClient struct {
+type DgraphClientK8s struct {
 	versioned.Interface
 }
 
 // Client creates a new k8s client
-func Client() (*K8sClient, error) {
+func Client() (*ClientK8s, error) {
 	cfg, err := CreateConfig(option.OperatorConfig.K8sAPIServerURL,
 		option.OperatorConfig.KubeCfgPath)
 	if err != nil {
@@ -56,11 +56,11 @@ func Client() (*K8sClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &K8sClient{Interface: c}, nil
+	return &ClientK8s{Interface: c}, nil
 }
 
 // DgraphClient creates a new k8s api extensions client
-func DgraphClient() (*K8sDgraphClient, error) {
+func DgraphClient() (*DgraphClientK8s, error) {
 	cfg, err := CreateConfig(option.OperatorConfig.K8sAPIServerURL,
 		option.OperatorConfig.KubeCfgPath)
 	if err != nil {
@@ -70,7 +70,7 @@ func DgraphClient() (*K8sDgraphClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &K8sDgraphClient{Interface: c}, nil
+	return &DgraphClientK8s{Interface: c}, nil
 }
 
 // APIExtClient creates a new k8s api extensions client

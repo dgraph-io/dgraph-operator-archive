@@ -53,24 +53,34 @@ func init() {
 	rootFlags.StringVar(&operatorConfigFile,
 		"config-file", "", "Configuration file. Takes precedence over default values, but is "+
 			"overridden to values set with environment variables and flags.")
-	rootFlags.StringVar(&option.OperatorConfig.KubeCfgPath, "kubecfg-path", "", "Path of kubeconfig file.")
-	rootFlags.StringVar(&option.OperatorConfig.K8sAPIServerURL, "k8s-api-server-url", "", "URL of the kubernetes API server.")
-	rootFlags.StringVar(&option.OperatorConfig.Server.Host, "server.host", defaults.OperatorHost, "Host to listen on.")
-	rootFlags.IntVar(&option.OperatorConfig.Server.Port, "server.port", defaults.OperatorPort, "Port to listen on.")
+	rootFlags.StringVar(&option.OperatorConfig.KubeCfgPath, "kubecfg-path", "",
+		"Path of kubeconfig file.")
+	rootFlags.StringVar(&option.OperatorConfig.K8sAPIServerURL, "k8s-api-server-url", "",
+		"URL of the kubernetes API server.")
+	rootFlags.StringVar(&option.OperatorConfig.Server.Host, "server.host",
+		defaults.OperatorHost, "Host to listen on.")
+	rootFlags.IntVar(&option.OperatorConfig.Server.Port, "server.port",
+		defaults.OperatorPort, "Port to listen on.")
 
 	// Convinces glog that Parse() has been called to avoid noisy logs.
 	// https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
-	flag.CommandLine.Parse([]string{})
+	if err := flag.CommandLine.Parse([]string{}); err != nil {
+		glog.Fatalf("error while parsing command line flags: %s", err)
+	}
 
 	// Add all existing global flag (eg: from glog) to rootCmd's flags
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
-	rootCmd.PersistentFlags().Set("stderrthreshold", "0")
+	if err := rootCmd.PersistentFlags().Set("stderrthreshold", "0"); err != nil {
+		glog.Fatalf("error while setting default value for glog flag: %s", err)
+	}
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(cmdRefCmd)
 
-	viper.BindPFlags(rootFlags)
+	if err := viper.BindPFlags(rootFlags); err != nil {
+		glog.Fatalf("error while binding flag set to viper configuration: %s", err)
+	}
 	cobra.OnInitialize(initCmds)
 }
 
@@ -102,7 +112,7 @@ func setGlogFlags() {
 			if gflag == "log_backtrace_at" && stringValue == ":0" {
 				continue
 			}
-			flag.Lookup(gflag).Value.Set(stringValue)
+			_ = flag.Lookup(gflag).Value.Set(stringValue)
 		}
 	}
 }

@@ -16,7 +16,9 @@ VENDORDIR := $(ROOTDIR)/vendor
 GO := go
 QUIET=@
 VERIFYARGS ?=
+
 pkgs = $(shell $(GO) list ./cmd/... | grep -v vendor)
+pkgs += $(shell $(GO) list ./pkg/...)
 
 define generate_k8s_api
 	$(QUIET)bash $(VENDORDIR)/k8s.io/code-generator/generate-groups.sh \
@@ -48,7 +50,7 @@ build:
 
 format:
 > $(QUIET)echo "[*] Formatting code"
-> $(QUIET)$(GO) fmt $(pkgs)
+> $(QUIET)$(GO) fmt -s -w $(pkgs)
 
 govet:
 > $(QUIET)echo "[*] Vetting code, checking for mistakes"

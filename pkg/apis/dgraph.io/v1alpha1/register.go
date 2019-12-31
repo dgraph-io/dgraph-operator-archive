@@ -59,7 +59,8 @@ var (
 	//   import (
 	//     "k8s.io/client-go/kubernetes"
 	//     clientsetscheme "k8s.io/client-go/kuberentes/scheme"
-	//     aggregatorclientsetscheme "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/scheme"
+	//     aggregatorclientsetscheme "k8s.io/kube-aggregator/pkg/client/
+	//        clientset_generated/clientset/scheme"
 	//   )
 	//
 	//   kclientset, _ := kubernetes.NewForConfig(c)
@@ -132,7 +133,7 @@ func createDgraphClusterCRD(clientset apiextclient.Interface) error {
 		Spec: apiextv1.CustomResourceDefinitionSpec{
 			Group: SchemeGroupVersion.Group,
 			Versions: []apiextv1.CustomResourceDefinitionVersion{
-				apiextv1.CustomResourceDefinitionVersion{
+				{
 					Name:   SchemeGroupVersion.Version,
 					Served: true,
 					Subresources: &apiextv1.CustomResourceSubresources{
@@ -180,8 +181,11 @@ var (
 
 // createUpdateCRD ensures the CRD object is created in the k8s cluster. It
 // will create or update the CRD.
-func createUpdateCRD(clientset apiextclient.Interface, crdName string, crd *apiextv1.CustomResourceDefinition) error {
-	_, err := clientset.ApiextensionsV1().CustomResourceDefinitions().Get(crd.ObjectMeta.Name, metav1.GetOptions{})
+func createUpdateCRD(clientset apiextclient.Interface, crdName string,
+	crd *apiextv1.CustomResourceDefinition) error {
+	_, err := clientset.ApiextensionsV1().
+		CustomResourceDefinitions().
+		Get(crd.ObjectMeta.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		glog.Infof("creating CRD (CustomResourceDefinition): %s", crdName)
 		_, err = clientset.ApiextensionsV1().CustomResourceDefinitions().Create(crd)
@@ -197,31 +201,36 @@ func createUpdateCRD(clientset apiextclient.Interface, crdName string, crd *apie
 
 	// Wait for the CRD to be available
 	glog.Info("Waiting for CRD (CustomResourceDefinition) to be available...")
-	err = wait.Poll(defaults.CRDWaitPollInterval, defaults.K8SAPIServerRequestTimeout, func() (bool, error) {
-		crd, err := clientset.ApiextensionsV1().CustomResourceDefinitions().Get(crd.ObjectMeta.Name, metav1.GetOptions{})
-		if err != nil {
-			return false, err
-		}
-		for _, cond := range crd.Status.Conditions {
-			switch cond.Type {
-			case apiextv1.Established:
-				if cond.Status == apiextv1.ConditionTrue {
-					return true, err
-				}
-			case apiextv1.NamesAccepted:
-				if cond.Status == apiextv1.ConditionFalse {
-					glog.Errorf("name conflict for CRD: %s", crdName)
-					return false, err
+	err = wait.Poll(defaults.CRDWaitPollInterval, defaults.K8SAPIServerRequestTimeout,
+		func() (bool, error) {
+			crd, err := clientset.ApiextensionsV1().
+				CustomResourceDefinitions().
+				Get(crd.ObjectMeta.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+			for _, cond := range crd.Status.Conditions {
+				switch cond.Type {
+				case apiextv1.Established:
+					if cond.Status == apiextv1.ConditionTrue {
+						return true, err
+					}
+				case apiextv1.NamesAccepted:
+					if cond.Status == apiextv1.ConditionFalse {
+						glog.Errorf("name conflict for CRD: %s", crdName)
+						return false, err
+					}
 				}
 			}
-		}
-		return false, err
-	})
+			return false, err
+		})
 
 	// In case of an error, try to delete the CRD inorder to keep it clean.
 	if err != nil {
 		glog.Info("trying to cleanup CRD")
-		deleteErr := clientset.ApiextensionsV1().CustomResourceDefinitions().Delete(crd.ObjectMeta.Name, nil)
+		deleteErr := clientset.ApiextensionsV1().
+			CustomResourceDefinitions().
+			Delete(crd.ObjectMeta.Name, nil)
 		if deleteErr != nil {
 			glog.Errorf("unable to delete k8s %s CRD %s. Deleting CRD due to: %s", crdName, deleteErr, err)
 			return errors.NewAggregate([]error{err, deleteErr})
