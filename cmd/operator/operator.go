@@ -18,6 +18,7 @@ package main
 
 import (
 	dgraphio "github.com/dgraph-io/dgraph-operator/pkg/apis/dgraph.io/v1alpha1"
+	"github.com/dgraph-io/dgraph-operator/pkg/controller"
 	"github.com/dgraph-io/dgraph-operator/pkg/k8s"
 	"github.com/dgraph-io/dgraph-operator/pkg/option"
 	"github.com/golang/glog"
@@ -49,5 +50,11 @@ func RunOperator() {
 			glog.Warningf("k8s version %s does not support CRD creation using apiextension", k8s.Version())
 		}
 		glog.Info("skipping automatic crd creation for operator")
+	}
+
+	// Run operator controllers to watch for the resources created in kubernetes context
+	// and perform some action based on that.
+	if err := controller.RunOperatorControllers(); err != nil {
+		glog.Fatalf("error while setting up controller for operator: %s", err)
 	}
 }
