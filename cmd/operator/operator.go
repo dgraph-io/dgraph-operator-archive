@@ -19,19 +19,35 @@ package main
 import (
 	dgraphio "github.com/dgraph-io/dgraph-operator/pkg/apis/dgraph.io/v1alpha1"
 	"github.com/dgraph-io/dgraph-operator/pkg/k8s"
+	"github.com/dgraph-io/dgraph-operator/pkg/option"
 	"github.com/golang/glog"
 )
 
-// RunOperator runs an operator with the provided configuration.
+// RunOperator bootstraps the configuration for operator and then initiate controller
+// run.
 func RunOperator() {
-	apiExtClient, err := k8s.APIExtClient()
+	client, err := k8s.Client()
 	if err != nil {
-		glog.Errorf("error while configuring apiextension client: %s", err)
-		return
+		glog.Fatalf("error while creating kubernetes client: %s", err)
+	}
+	if err := k8s.UpdateVersion(client); err != nil {
+		glog.Fatalf("error updating kubernetes server version: %s", err)
 	}
 
-	if err = dgraphio.CreateCustomResourceDefinitions(apiExtClient); err != nil {
-		glog.Errorf("error while creating operator CRDs: %s", err)
-		return
+	if !option.OperatorConfig.SkipCRDCreation && k8s.CanUseAPIExtV1() {
+		apiExtClient, err := k8s.APIExtClient()
+		if err != nil {
+			glog.Fatalf("error while configuring apiextension client: %s", err)
+		}
+
+		// Create the custom resource definition for dgraph-operator if they don't exist.
+		if err = dgraphio.CreateCustomResourceDefinitions(apiExtClient); err != nil {
+			glog.Fatalf("error while creating operator CRDs: %s", err)
+		}
+	} else {
+		if !k8s.CanUseAPIExtV1() {
+			glog.Warningf("k8s version %s does not support CRD creation using apiextension", k8s.Version())
+		}
+		glog.Info("skipping automatic crd creation for operator")
 	}
 }
