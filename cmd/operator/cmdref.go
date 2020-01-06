@@ -33,6 +33,9 @@ var cmdRefCmd = &cobra.Command{
 	Short: "Generate command line reference for dgraph operator command line interface.",
 
 	Run: func(cmd *cobra.Command, args []string) {
+		// Disable autogen comment in the command line reference.
+		rootCmd.DisableAutoGenTag = true
+
 		fmt.Printf("generating command line reference documentation in directory: %s\n", cmdRefDir)
 		err := doc.GenMarkdownTree(rootCmd, cmdRefDir)
 		if err != nil {

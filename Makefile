@@ -26,4 +26,16 @@ govet:
 > $(QUIET)echo "[*] Vetting code, checking for mistakes"
 > $(QUIET)$(GO) vet $(pkgs)
 
-.PHONY: build format govet
+check_lint:
+> $(QUIET)echo "[*] Checking lint errors using golangci-lint"
+> $(QUIET)golangci-lint run ./cmd/...
+
+generate_cmdref: build
+> $(QUIET)echo "[*] Generating cmdref for dgraph-operator"
+> $(QUIET)./dgraph-operator cmdref --directory=./docs/cmdref
+
+check_cmdref: build
+> $(QUIET)echo "[*] Checking dgraph opeartor command line reference."
+> $(QUIET)./contrib/scripts/cmdref_check.sh
+
+.PHONY: build format govet check_lint generate_cmdref check_cmdref
