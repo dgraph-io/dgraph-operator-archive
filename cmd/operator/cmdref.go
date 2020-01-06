@@ -21,28 +21,31 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "dgraph-operator",
-	Short: "Dgraph Operator creates/configures/manages Dgraph clusters atop Kubernetes.",
+var cmdRefDir string
+
+// cmdRefCmd is the operator command to generate command line reference docs using
+// spf13/cobra/doc
+var cmdRefCmd = &cobra.Command{
+	Use:   "cmdref",
+	Short: "Generate command line reference for dgraph operator command line interface.",
 
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := cmd.Help(); err != nil {
-			fmt.Println(err)
+		// Disable autogen comment in the command line reference.
+		rootCmd.DisableAutoGenTag = true
+
+		fmt.Printf("generating command line reference documentation in directory: %s\n", cmdRefDir)
+		err := doc.GenMarkdownTree(rootCmd, cmdRefDir)
+		if err != nil {
+			fmt.Printf("error while generating cmdref: %s\n", err)
 			os.Exit(1)
 		}
 	},
 }
 
-func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
 func init() {
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(cmdRefCmd)
+	cmdRefCmd.Flags().StringVarP(&cmdRefDir, "directory", "d",
+		"docs/cmdref/", "Directory to use for creating cmd reference docs.")
 }

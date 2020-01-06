@@ -9,3 +9,4 @@ notifications:
 
 script:
   - make build
+  - make check_cmdref
