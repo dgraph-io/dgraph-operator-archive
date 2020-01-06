@@ -106,26 +106,27 @@ func CreateCustomResourceDefinitions(clientset apiextclient.Interface) error {
 	return nil
 }
 
+var (
+	// DgraphClusterCRDSingularName is the singular name of custom resource definition
+	DgraphClusterCRDSingularName = "dgraphcluster"
+
+	// DgraphClusterCRDPluralName is the plural name of custom resource definition
+	DgraphClusterCRDPluralName = "dgraphclusters"
+
+	// DgraphClusterCRDShortNames are the abbreviated names to refer to this CRD's instances
+	DgraphClusterCRDShortNames = []string{"dc"}
+
+	// DgraphClusterCRDName is k8s represented name of the custom resource definition.
+	DgraphClusterCRDName string = DgraphClusterCRDPluralName + "." + SchemeGroupVersion.Group
+)
+
 // createDgraphClusterCRD creates a new Custom resource definition for kubernetes for type
 // DgraphCluster.
 func createDgraphClusterCRD(clientset apiextclient.Interface) error {
-	var (
-		// customResourceDefinitionSingularName is the singular name of custom resource definition
-		customResourceDefinitionSingularName = "dgraphcluster"
-
-		// customResourceDefinitionPluralName is the plural name of custom resource definition
-		customResourceDefinitionPluralName = "dgraphclusters"
-
-		// customResourceDefinitionShortNames are the abbreviated names to refer to this CRD's instances
-		customResourceDefinitionShortNames = []string{"dc"}
-
-		// crdName k8s represented name of the custom resource definition.
-		crdName = customResourceDefinitionPluralName + "." + SchemeGroupVersion.Group
-	)
 
 	res := &apiextv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: crdName,
+			Name: DgraphClusterCRDName,
 			Labels: map[string]string{
 				CustomResourceDefinitionSchemaVersionKey: CustomResourceDefinitionSchemaVersion,
 			},
@@ -144,9 +145,9 @@ func createDgraphClusterCRD(clientset apiextclient.Interface) error {
 				},
 			},
 			Names: apiextv1.CustomResourceDefinitionNames{
-				Plural:     customResourceDefinitionPluralName,
-				Singular:   customResourceDefinitionSingularName,
-				ShortNames: customResourceDefinitionShortNames,
+				Plural:     DgraphClusterCRDPluralName,
+				Singular:   DgraphClusterCRDSingularName,
+				ShortNames: DgraphClusterCRDShortNames,
 				Kind:       DgraphClusterKindDefinition,
 			},
 

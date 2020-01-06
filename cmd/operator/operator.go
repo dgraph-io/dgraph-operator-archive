@@ -27,6 +27,7 @@ import (
 // RunOperator bootstraps the configuration for operator and then initiate controller
 // run.
 func RunOperator() {
+	// update k8s version using the client.
 	client, err := k8s.Client()
 	if err != nil {
 		glog.Fatalf("error while creating kubernetes client: %s", err)
@@ -52,9 +53,10 @@ func RunOperator() {
 		glog.Info("skipping automatic crd creation for operator")
 	}
 
+	cm := controller.MustNewControllerManager()
 	// Run operator controllers to watch for the resources created in kubernetes context
 	// and perform some action based on that.
-	if err := controller.RunOperatorControllers(); err != nil {
+	if err := cm.RunOperatorControllers(); err != nil {
 		glog.Fatalf("error while setting up controller for operator: %s", err)
 	}
 }

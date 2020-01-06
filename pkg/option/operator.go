@@ -37,6 +37,9 @@ type operatorConfig struct {
 	// to create the configuration for rest client.
 	KubeCfgPath string
 
+	// Workers count is the number of workers to run for the controller.
+	WorkersCount int
+
 	// server represents configuration of the operator server.
 	Server *operatorServer
 }

@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package defaults
+package dgraphcluster
 
 import (
-	"time"
+	dgraphio "github.com/dgraph-io/dgraph-operator/pkg/apis/dgraph.io/v1alpha1"
 )
 
-const (
-	// CRDWaitPollInterval is the interval in which to regularly poll the K8s API server
-	// for the availability of CRD.
-	CRDWaitPollInterval time.Duration = 2 * time.Second
-
-	// K8SAPIServerRequestTimeout is the default value of timeout for the request to
-	// Kubernetes API server.
-	K8SAPIServerRequestTimeout time.Duration = 20 * time.Second
-
-	// InformerResyncDuration is the default resync duration of k8s shared informer factory.
-	InformerResyncDuration time.Duration = 30 * time.Second
-)
+// This function handles the udpate of dgraph cluster object.
+func (dc *Controller) updateDgraphCluster(dcObj *dgraphio.DgraphCluster) error {
+	return nil
+}

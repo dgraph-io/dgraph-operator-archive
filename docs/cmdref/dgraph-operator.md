@@ -27,6 +27,7 @@ dgraph-operator [flags]
       --stderrthreshold severity         logs at or above this threshold go to stderr
   -v, --v Level                          log level for V logs
       --vmodule moduleSpec               comma-separated list of pattern=N settings for file-filtered logging
+      --workers int                      Number of workers to run for the controller. (default 3)
 ```
 
 ### SEE ALSO

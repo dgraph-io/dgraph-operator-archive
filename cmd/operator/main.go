@@ -61,6 +61,8 @@ func init() {
 		defaults.OperatorHost, "Host to listen on.")
 	rootFlags.IntVar(&option.OperatorConfig.Server.Port, "server.port",
 		defaults.OperatorPort, "Port to listen on.")
+	rootFlags.IntVar(&option.OperatorConfig.WorkersCount, "workers",
+		defaults.WorkersCount, "Number of workers to run for the controller.")
 
 	// Convinces glog that Parse() has been called to avoid noisy logs.
 	// https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
