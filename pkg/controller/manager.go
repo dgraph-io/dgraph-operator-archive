@@ -22,6 +22,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dgraph-io/dgraph-operator/pkg/client/clientset/versioned"
+	informers "github.com/dgraph-io/dgraph-operator/pkg/client/informers/externalversions"
 	dc "github.com/dgraph-io/dgraph-operator/pkg/controller/dgraphcluster"
 	"github.com/dgraph-io/dgraph-operator/pkg/defaults"
 	"github.com/dgraph-io/dgraph-operator/pkg/k8s"
@@ -29,10 +31,19 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 )
+
+// ControllerManager manages all the controllers for the operator.
+type ControllerManager struct {
+	k8sClient    kubernetes.Interface
+	dgraphClient versioned.Interface
+
+	registeredControllers []Controller
+}
 
 // Controller is the standard interface which each controller within dgraph operator
 // must implement.
@@ -40,11 +51,28 @@ type Controller interface {
 	Run(context.Context)
 }
 
-var (
-	registeredControllers = []Controller{
-		dc.NewController(),
+// MustNewControllerManager returns a ControllerManager instance if it is able
+// to do so, else it exists the program.
+func MustNewControllerManager() *ControllerManager {
+	k8sClient, err := k8s.Client()
+	if err != nil {
+		glog.Fatalf("error while building kubernetes client.")
 	}
-)
+
+	dgraphClient, err := k8s.DgraphClient()
+	if err != nil {
+		glog.Fatalf("error while building dgraph k8s client")
+	}
+
+	registeredControllers := make([]Controller, 0)
+
+	return &ControllerManager{
+		k8sClient,
+		dgraphClient,
+
+		registeredControllers,
+	}
+}
 
 // RunOperatorControllers runs all the required controllers for dgraph operator.
 // Each controller watches for the resources it reconciles and take necessery action
@@ -53,12 +81,7 @@ var (
 // Here we also implement the logic of leader election for dgraph operator using
 // built-in leader election capbility in kubernetes.
 // See: https://github.com/kubernetes/client-go/blob/master/examples/leader-election/main.go
-func RunOperatorControllers() error {
-	client, err := k8s.Client()
-	if err != nil {
-		return err
-	}
-
+func (cm *ControllerManager) RunOperatorControllers() error {
 	// Get hostname for identity name of the lease lock holder.
 	// We identify the leader of the operator cluster using hostname.
 	// If there is an error while getting hostname we use a randomly generated
@@ -105,7 +128,7 @@ func RunOperatorControllers() error {
 			Name:      defaults.LeaseLockName,
 			Namespace: ns,
 		},
-		Client: client.CoreV1(),
+		Client: cm.k8sClient.CoreV1(),
 		LockConfig: resourcelock.ResourceLockConfig{
 			// Identity name of theholder
 			Identity:      hostID,
@@ -123,7 +146,7 @@ func RunOperatorControllers() error {
 		RetryPeriod:   defaults.LeaderElectionRetryPeriod,
 
 		Callbacks: leaderelection.LeaderCallbacks{
-			OnStartedLeading: onStart,
+			OnStartedLeading: cm.onStart,
 			OnStoppedLeading: func() {
 				glog.Infof("leader election lost: %s", hostID)
 			},
@@ -142,12 +165,30 @@ func RunOperatorControllers() error {
 
 // onStart is the main function which is executed when our operator starts leading
 // the cluster of operators in the kubernetes cluster.
-func onStart(ctx context.Context) {
+// onStart also populates the registered controller that the operator manages.
+func (cm *ControllerManager) onStart(ctx context.Context) {
 	glog.Info("started leading.")
+	glog.Info("registering controllers for operator")
+	defer func() {
+		cm.registeredControllers = make([]Controller, 0)
+		glog.Info("exitting onStart method...")
+	}()
 
-	// Start running managed controllers here
-	for _, ctrl := range registeredControllers {
-		go ctrl.Run(ctx)
+	dgraphClusterInformer := informers.NewSharedInformerFactory(cm.dgraphClient, defaults.InformerResyncDuration)
+	cm.registeredControllers = append(cm.registeredControllers, dc.NewController(
+		cm.k8sClient,
+		cm.dgraphClient,
+		dgraphClusterInformer.Dgraph().V1alpha1().DgraphClusters(),
+	))
+
+	// notice that there is no need to run Start methods in a separate goroutine.
+	// (i.e. go informerFactory.Start(stopCh) Start method is non-blocking and
+	// runs all registered informers in a dedicated goroutine.
+	dgraphClusterInformer.Start(ctx.Done())
+
+	for _, ctrl := range cm.registeredControllers {
+		ctrl.Run(ctx)
 	}
+
 	select {}
 }
