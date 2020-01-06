@@ -39,6 +39,7 @@ var (
 			"zero":            zeroClusterSchema,
 			"ratel":           ratelClusterSchema,
 			"baseImage":       dgraphComponentProperties["baseImage"],
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -67,6 +68,7 @@ var (
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
 			"baseImage":       dgraphComponentProperties["baseImage"],
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -95,6 +97,7 @@ var (
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
 			"baseImage":       dgraphComponentProperties["baseImage"],
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -124,6 +127,7 @@ var (
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
 			"baseImage":       dgraphComponentProperties["baseImage"],
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -141,6 +145,11 @@ var (
 		"baseImage": {
 			Description: "Base image(without tag) to use for dgraph component cluster.",
 			Type:        "string",
+		},
+		"serviceType": {
+			Description: "Kubernetes service type to use for the Dgraph cluster component" +
+				"(one of ClusterIP, LoadBalancer, NodePort).",
+			Type: "string",
 		},
 		"version": {
 			Description: "Version of the dgraph component to use in the clsuter.",

@@ -17,6 +17,7 @@
 package v1alpha1
 
 import (
+	k8sutils "github.com/dgraph-io/dgraph-operator/pkg/k8s/utils"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,22 @@ type DgraphCluster struct {
 
 	// Most recently observed status of the dgraph cluster
 	Status DgraphClusterStatus `json:"status"`
+}
+
+// AsOwnerReference returns the OwnerReference corresponding to DgraphCluster
+// which can be used as OwnerReference for other resources in the cluster.
+func (dc *DgraphCluster) AsOwnerReference() metav1.OwnerReference {
+	controller := true
+	blockOwnerDeletion := true
+
+	return metav1.OwnerReference{
+		APIVersion:         SchemeGroupVersion.String(),
+		Kind:               DgraphClusterKindDefinition,
+		Name:               dc.GetName(),
+		UID:                dc.GetUID(),
+		Controller:         &controller,
+		BlockOwnerDeletion: &blockOwnerDeletion,
+	}
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -84,6 +101,9 @@ type DgraphClusterSpec struct {
 	// Version of the component. Override the cluster-level version if non-empty
 	Version string `json:"version"`
 
+	// ServiceType is the type of kubernetes service to create for the Cluster components.
+	ServiceType string `jsong:"serviceType,omitempty"`
+
 	// ImagePullPolicy of the dgraph component.
 	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
@@ -94,6 +114,38 @@ type DgraphClusterSpec struct {
 
 	// Resource requirements of the components, this can be overridden at component level.
 	corev1.ResourceRequirements `json:",inline"`
+}
+
+// AlphaServiceType returns the kubernetes service type to use for Alpha Cluster
+func (dc *DgraphClusterSpec) AlphaServiceType() corev1.ServiceType {
+	if dc.AlphaCluster.ServiceType != "" {
+		return k8sutils.ResolveK8SServiceType(dc.AlphaCluster.ServiceType)
+	}
+
+	return k8sutils.ResolveK8SServiceType(dc.ServiceType)
+}
+
+// ZeroServiceType returns the kubernetes service type to use for Zero Cluster
+func (dc *DgraphClusterSpec) ZeroServiceType() corev1.ServiceType {
+	if dc.ZeroCluster.ServiceType != "" {
+		return k8sutils.ResolveK8SServiceType(dc.ZeroCluster.ServiceType)
+	}
+
+	return k8sutils.ResolveK8SServiceType(dc.ServiceType)
+}
+
+// RatelServiceType returns the kubernetes service type to use for Ratel Cluster
+func (dc *DgraphClusterSpec) RatelServiceType() corev1.ServiceType {
+	if dc.Ratel.ServiceType != "" {
+		return k8sutils.ResolveK8SServiceType(dc.Ratel.ServiceType)
+	}
+
+	return k8sutils.ResolveK8SServiceType(dc.ServiceType)
+}
+
+// GetClusterID returns the cluster ID for the provided Dgraph Cluster.
+func (dcs *DgraphClusterSpec) GetClusterID() string {
+	return dcs.ClusterID
 }
 
 // DgraphClusterStatus represents the status of a DgraphCluster.
@@ -181,6 +233,10 @@ type DgraphComponentSpec struct {
 
 	// Base image of the component
 	BaseImage string `json:"baseImage,omitempty"`
+
+	// ServiceType is type of service to create for the component.
+	// One of NodePort, ClusterIP, LoadBalancer. Defaults to ClusterIP.
+	ServiceType string `json:"serviceType,omitempty"`
 
 	// Version of the component. Override the cluster-level version if non-empty
 	Version string `json:"version,omitempty"`

@@ -31,4 +31,8 @@ const (
 
 	// InformerResyncDuration is the default resync duration of k8s shared informer factory.
 	InformerResyncDuration time.Duration = 30 * time.Second
+
+	// K8SDelimeter is the default delimeter for strings constructed for kubernetes context by
+	// dgraph.
+	K8SDelimeter string = "-"
 )

@@ -31,6 +31,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -175,12 +176,13 @@ func (cm *Manager) onStart(ctx context.Context) {
 		glog.Info("exitting onStart method...")
 	}()
 
-	dgraphClusterInformer := informers.NewSharedInformerFactory(
-		cm.dgraphClient, defaults.InformerResyncDuration)
+	dgraphClusterInformer := informers.NewSharedInformerFactory(cm.dgraphClient, defaults.InformerResyncDuration)
+	k8sInformerFactory := k8sinformers.NewSharedInformerFactory(cm.k8sClient, defaults.InformerResyncDuration)
 	cm.registeredControllers = append(cm.registeredControllers, dc.NewController(
 		cm.k8sClient,
 		cm.dgraphClient,
 		dgraphClusterInformer.Dgraph().V1alpha1().DgraphClusters(),
+		k8sInformerFactory,
 	))
 
 	// notice that there is no need to run Start methods in a separate goroutine.
@@ -189,8 +191,10 @@ func (cm *Manager) onStart(ctx context.Context) {
 	dgraphClusterInformer.Start(ctx.Done())
 
 	for _, ctrl := range cm.registeredControllers {
-		ctrl.Run(ctx)
+		// run the required controller.
+		go ctrl.Run(ctx)
 	}
 
-	select {}
+	glog.Info("all controllers confiugured and are now running.")
+	<-ctx.Done()
 }

@@ -29,6 +29,7 @@ import (
 	listers "github.com/dgraph-io/dgraph-operator/pkg/client/listers/dgraph.io/v1alpha1"
 	"github.com/dgraph-io/dgraph-operator/pkg/defaults"
 	"github.com/dgraph-io/dgraph-operator/pkg/k8s"
+	"github.com/dgraph-io/dgraph-operator/pkg/manager"
 	"github.com/dgraph-io/dgraph-operator/pkg/option"
 
 	"github.com/golang/glog"
@@ -36,6 +37,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -70,12 +72,15 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+
+	managers []manager.Manager
 }
 
 // NewController returns a new DgraphCluster controller.
 func NewController(k8sClient kubernetes.Interface,
 	dgraphClient versioned.Interface,
-	dgraphClusterInformer dgraphinformer.DgraphClusterInformer) *Controller {
+	dgraphClusterInformer dgraphinformer.DgraphClusterInformer,
+	k8sInformerFactory k8sinformers.SharedInformerFactory) *Controller {
 
 	utilruntime.Must(dgraphscheme.AddToScheme(scheme.Scheme))
 	glog.Info("Creating event broadcaster")
@@ -119,6 +124,37 @@ func NewController(k8sClient kubernetes.Interface,
 		},
 	})
 
+	// Listers for required kubernetes resources.
+	podsLister := k8sInformerFactory.Core().V1().Pods().Lister()
+	svcLister := k8sInformerFactory.Core().V1().Services().Lister()
+	statefulSetLister := k8sInformerFactory.Apps().V1().StatefulSets().Lister()
+	deploymentLister := k8sInformerFactory.Apps().V1().Deployments().Lister()
+
+	// setup managers for DgraphCluster resources.
+	// These managers must be synced in this particular order only.
+	// Zero -> Alpha -> Ratel
+	managers := make([]manager.Manager, 0)
+	managers = append(managers, manager.NewZeroManager(
+		k8sClient,
+		podsLister,
+		svcLister,
+		statefulSetLister,
+	))
+	managers = append(managers, manager.NewAlphaManager(
+		k8sClient,
+		podsLister,
+		svcLister,
+		statefulSetLister,
+	))
+	managers = append(managers, manager.NewRatelManager(
+		k8sClient,
+		podsLister,
+		svcLister,
+		deploymentLister,
+	))
+
+	ctrl.managers = managers
+
 	return ctrl
 }
 
@@ -130,23 +166,23 @@ func (dc *Controller) Run(ctx context.Context) {
 
 	// Wait for CRD to be ready, skip if any error occurs.
 	if err := k8s.WaitForCRD(dgraphio.DgraphClusterCRDName); err != nil {
-		glog.Warningf("error while waiting for CRD to be ready: %s\nignoring failure", err)
+		glog.Warningf("dgraph-cluster-controller: error while waiting for CRD to be ready: %s\nignoring failure", err)
 	}
 
-	glog.Info("waiting for informer cache to sync")
+	glog.Info("dgraph-cluster-controller: waiting for informer cache to sync")
 	if ok := cache.WaitForCacheSync(ctx.Done(), dc.dgraphClusterSynced); !ok {
-		glog.Fatalf("error while syncing informer cache, exitting")
+		glog.Fatalf("dgraph-cluster-controller: error while syncing informer cache, exitting")
 	}
-	glog.Info("informer cache synced.")
+	glog.Info("dgraph-cluster-controller: informer cache synced.")
 
 	// Run WorkersCount number of workers to process the work from the queue.
 	for i := 0; i < option.OperatorConfig.WorkersCount; i++ {
 		go wait.Until(dc.runWorker, time.Second, ctx.Done())
 	}
 
-	glog.Info("started workers")
+	glog.Info("dgraph-cluster-controller: started workers")
 	<-ctx.Done()
-	glog.Info("shutting down workers")
+	glog.Info("dgraph-cluster-controller: shutting down workers")
 }
 
 func (dc *Controller) runWorker() {
@@ -217,7 +253,7 @@ func (dc *Controller) sync(key string) error {
 		return err
 	}
 
-	// Get the DgraphCluster CRD object we are syncing here.
+	// Get the latest DgraphCluster CRD object from the API server we are syncing here.
 	cluster, err := dc.dgraphClusterLister.DgraphClusters(namespace).Get(name)
 	if kerrors.IsNotFound(err) {
 		glog.Infof("DgraphCluster(%q) has already been deleted", key)
@@ -227,7 +263,9 @@ func (dc *Controller) sync(key string) error {
 		return err
 	}
 
-	return dc.updateDgraphCluster(cluster.DeepCopy())
+	// Update the dgraph cluster based on the latest object we got from the
+	// kubernetes API.
+	return dc.UpdateDgraphCluster(cluster.DeepCopy())
 }
 
 // enqueueObj enqueues the object to the work queue.
