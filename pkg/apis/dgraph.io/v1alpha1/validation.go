@@ -38,6 +38,7 @@ var (
 			"alpha":           alphaClusterSchema,
 			"zero":            zeroClusterSchema,
 			"ratel":           ratelClusterSchema,
+			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -46,6 +47,8 @@ var (
 			"clusterID",
 			"alpha",
 			"zero",
+			"baseImage",
+			"version",
 		},
 	}
 
@@ -60,9 +63,7 @@ var (
 		Description: "Configuration for dgraph alpha cluster.",
 		Type:        "object",
 		Required: []string{
-			"baseImage",
 			"replicas",
-			"storageClassName",
 			"config",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
@@ -91,9 +92,7 @@ var (
 		Description: "Configuration for dgraph zero cluster.",
 		Type:        "object",
 		Required: []string{
-			"baseImage",
 			"replicas",
-			"storageClassName",
 			"config",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
@@ -123,7 +122,6 @@ var (
 		Description: "Configuration for dgraph zero cluster.",
 		Type:        "object",
 		Required: []string{
-			"baseImage",
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{

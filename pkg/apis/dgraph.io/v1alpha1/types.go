@@ -78,8 +78,11 @@ type DgraphClusterSpec struct {
 	// as that of DgraphComponentSpec but are cluster level, they can be overridden
 	// inside individual component configuration.
 
+	// Base image of the component
+	BaseImage string `json:"baseImage"`
+
 	// Version of the component. Override the cluster-level version if non-empty
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 
 	// ImagePullPolicy of the dgraph component.
 	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
