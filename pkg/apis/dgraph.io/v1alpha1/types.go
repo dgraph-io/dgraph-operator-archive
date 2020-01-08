@@ -17,6 +17,9 @@
 package v1alpha1
 
 import (
+	"fmt"
+
+	"github.com/dgraph-io/dgraph-operator/pkg/defaults"
 	k8sutils "github.com/dgraph-io/dgraph-operator/pkg/k8s/utils"
 	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -59,6 +62,57 @@ func (dc *DgraphCluster) AsOwnerReference() metav1.OwnerReference {
 	}
 }
 
+func (dc *DgraphCluster) internalComponentOverride(dcs *DgraphComponentSpec) {
+	if dcs.Version == "" {
+		dcs.Version = dc.Spec.Version
+	}
+
+	if dcs.ServiceType == "" {
+		dcs.ServiceType = dc.Spec.ServiceType
+	}
+
+	if dcs.Resources == nil {
+		dcs.Resources = dc.Spec.Resources.DeepCopy()
+	}
+
+	if dcs.ImagePullPolicy == nil {
+		dcs.ImagePullPolicy = dc.Spec.ImagePullPolicy
+	}
+}
+
+// ZeroClusterSpec returns cluster specification for dgraph zero component
+// applying default values wherever necessery.
+// It returns pointer to a copy of actual ZeroClusterSpec object in the
+// DgraphCluster object.
+func (dc *DgraphCluster) ZeroClusterSpec() *ZeroClusterSpec {
+	zc := dc.Spec.ZeroCluster.DeepCopy()
+	dc.internalComponentOverride(&zc.DgraphComponentSpec)
+
+	return zc
+}
+
+// AlphaClusterSpec returns cluster specification for dgraph Alpha component
+// applying default values wherever necessery.
+// It returns pointer to a copy of actual AlphaClusterSpec object in the
+// DgraphCluster object.
+func (dc *DgraphCluster) AlphaClusterSpec() *AlphaClusterSpec {
+	ac := dc.Spec.AlphaCluster.DeepCopy()
+	dc.internalComponentOverride(&ac.DgraphComponentSpec)
+
+	return ac
+}
+
+// RatelClusterSpec returns cluster specification for dgraph Ratel component
+// applying default values wherever necessery.
+// It returns pointer to a copy of actual RatelClusterSpec object in the
+// DgraphCluster object.
+func (dc *DgraphCluster) RatelClusterSpec() *RatelSpec {
+	ac := dc.Spec.Ratel.DeepCopy()
+	dc.internalComponentOverride(&ac.DgraphComponentSpec)
+
+	return ac
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +k8s:openapi-gen=true
@@ -83,13 +137,13 @@ type DgraphClusterSpec struct {
 	ClusterID string `json:"clusterID"`
 
 	// Cluster specification for dgraph alpha components.
-	AlphaCluster AlphaClusterSpec `json:"alpha"`
+	AlphaCluster *AlphaClusterSpec `json:"alpha"`
 
 	// Cluster specification for dgraph zero components.
-	ZeroCluster ZeroClusterSpec `json:"zero"`
+	ZeroCluster *ZeroClusterSpec `json:"zero"`
 
 	// Specification for dgraph ratel component for providing UI.
-	Ratel RatelSpec `json:"ratel,omitempty"`
+	Ratel *RatelSpec `json:"ratel,omitempty"`
 
 	// Below variables are more or less same
 	// as that of DgraphComponentSpec but are cluster level, they can be overridden
@@ -113,7 +167,7 @@ type DgraphClusterSpec struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Resource requirements of the components, this can be overridden at component level.
-	corev1.ResourceRequirements `json:",inline"`
+	Resources *corev1.ResourceRequirements `json:"resources,omiempty"`
 }
 
 // AlphaServiceType returns the kubernetes service type to use for Alpha Cluster
@@ -144,8 +198,8 @@ func (dc *DgraphClusterSpec) RatelServiceType() corev1.ServiceType {
 }
 
 // GetClusterID returns the cluster ID for the provided Dgraph Cluster.
-func (dcs *DgraphClusterSpec) GetClusterID() string {
-	return dcs.ClusterID
+func (dc *DgraphClusterSpec) GetClusterID() string {
+	return dc.ClusterID
 }
 
 // DgraphClusterStatus represents the status of a DgraphCluster.
@@ -166,14 +220,22 @@ type DgraphClusterStatus struct {
 type AlphaClusterSpec struct {
 	DgraphComponentSpec `json:",inline"`
 
+	// Storage is the configuration for persistent storage for dgraph component.
+	PersistentStorage *ComponentPersistentStorage `json:"persistentStorage,omitempty"`
+
 	// Number of replicas to run in the cluster.
 	Replicas int32 `json:"replicas"`
 
-	// StorageClass to use as persistent volume for the componnet.
-	StorageClassName string `json:"storageClassName,omitempty"`
-
 	// Config is the configuration of the dgraph component.
 	Config *AlphaConfig `json:"config,omitempty"`
+}
+
+// LruMB returns the LRU MB configuration for dgraph alpha.
+func (acs *AlphaClusterSpec) LruMB() int32 {
+	if acs.Config == nil {
+		return defaults.LruMBValue
+	}
+	return acs.Config.LruMB
 }
 
 // AlphaClusterStatus represents the cluster status of dgraph alpha components.
@@ -191,14 +253,22 @@ type AlphaClusterStatus struct {
 type ZeroClusterSpec struct {
 	DgraphComponentSpec `json:",inline"`
 
+	// PersistentStorage is the configuration for persistent storage for dgraph component.
+	PersistentStorage *ComponentPersistentStorage `json:"persistentStorage,omitempty"`
+
 	// Number of replicas to run in the cluster.
 	Replicas int32 `json:"replicas"`
 
-	// StorageClass to use as persistent volume for the componnet.
-	StorageClassName string `json:"storageClassName,omitempty"`
-
 	// Config is the configuration of the dgraph zero.
 	Config *ZeroConfig `json:"config,omitempty"`
+}
+
+// ShardReplicaCount returns the zero replica count to be used for deployment of the dgraph component.
+func (zcs *ZeroClusterSpec) ShardReplicaCount() int32 {
+	if zcs.Config == nil {
+		return zcs.Replicas
+	}
+	return zcs.Config.ShardReplicaCount
 }
 
 // ZeroClusterStatus represents the cluster status of dgraph alpha components.
@@ -229,7 +299,7 @@ type RatelStatus struct {
 // dgraph components.
 type DgraphComponentSpec struct {
 	// Resource requirements of the components.
-	corev1.ResourceRequirements `json:",inline"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Base image of the component
 	BaseImage string `json:"baseImage,omitempty"`
@@ -248,6 +318,25 @@ type DgraphComponentSpec struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+// Image returns the image to be used for deployment of the dgraph component.
+func (dcs *DgraphComponentSpec) Image() string {
+	return fmt.Sprintf("%s:%s", dcs.BaseImage, dcs.Version)
+}
+
+// PodImagePullPolicy returns the image pull policy to be used for deployment of the dgraph component.
+func (dcs *DgraphComponentSpec) PodImagePullPolicy() corev1.PullPolicy {
+	return *dcs.ImagePullPolicy
+}
+
+// ResourceRequirements returns the resource requirements to be used for deployment of the dgraph component.
+func (dcs *DgraphComponentSpec) ResourceRequirements() corev1.ResourceRequirements {
+	if dcs.Resources == nil {
+		return corev1.ResourceRequirements{}
+	}
+
+	return *dcs.Resources.DeepCopy()
+}
+
 // DgraphComponent represents a single member of either alpha or zero cluster.
 type DgraphComponent struct {
 	Name string `json:"name"`
@@ -257,10 +346,32 @@ type DgraphComponent struct {
 	Healthy      bool   `json:"health"`
 }
 
+// ComponentPersistentStorage is the common type for storing configuration for
+// persistent storage to associate with the dgraph component.
+type ComponentPersistentStorage struct {
+	// StorageClassName is the name of the storage class to use for the
+	// persistent volumes for the dgraph component.
+	StorageClassName string `json:"storageClassName,omitempty"`
+
+	// Resource requirements for dgraph persistent storage.
+	Requests corev1.ResourceList `json:"requests,omitempty"`
+}
+
+func (cps *ComponentPersistentStorage) StorageRequest() corev1.ResourceList {
+	if cps.Requests == nil {
+		return corev1.ResourceList{}
+	}
+
+	return cps.Requests.DeepCopy()
+}
+
 // +k8s:openapi-gen=true
 // AlphaConfig is the configuration for dgraph alpha component.
 type AlphaConfig struct {
 	DgraphConfig `json:",inline"`
+
+	// LruMB is the value of lrumb flag for dgraph alpha.
+	LruMB int32 `json:"lruMB,omitempty"`
 }
 
 // +k8s:openapi-gen=true

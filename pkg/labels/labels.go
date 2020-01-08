@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // K8SlabelKey is the commonly used labels as kubernetes docs defines.
@@ -57,6 +59,11 @@ func (l Labels) String() string {
 
 	sort.StringSlice(labelsList).Sort()
 	return strings.Join(labelsList, ",")
+}
+
+// AsK8sLabelSelector returns label selector from Label set type.
+func (l Labels) AsK8sLabelSelector() *metav1.LabelSelector {
+	return &metav1.LabelSelector{MatchLabels: l}
 }
 
 // Predefined function to set kubernetes common labels in the LabelSet.

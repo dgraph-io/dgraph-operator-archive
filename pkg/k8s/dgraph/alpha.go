@@ -30,61 +30,61 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// DefaultZeroLabels returns a map representing labels associated with dgraph zero component.
-func DefaultZeroLabels(instanceName string) map[string]string {
-	zeroLabels := labels.NewLabelSet().
+// DefaultAlphaLabels returns a map representing labels associated with dgraph Alpha component.
+func DefaultAlphaLabels(instanceName string) map[string]string {
+	AlphaLabels := labels.NewLabelSet().
 		Instance(instanceName).
-		Component(defaults.ZeroMemberName).
+		Component(defaults.AlphaMemberName).
 		ManagedBy(defaults.DgraphOperatorName)
 
-	return zeroLabels
+	return AlphaLabels
 }
 
-// NewZeroService constructs a K8s service object for dgraph zero from the provided DgraphCluster
+// NewAlphaService constructs a K8s service object for dgraph Alpha from the provided DgraphCluster
 // configuration.
-func NewZeroService(dc *v1alpha1.DgraphCluster) *corev1.Service {
+func NewAlphaService(dc *v1alpha1.DgraphCluster) *corev1.Service {
 	ns := dc.GetNamespace()
 	name := dc.GetName()
 	clusterID := dc.Spec.GetClusterID()
 
-	serviceName := utils.DgraphZeroMemberName(clusterID, name)
-	zeroLabels := DefaultZeroLabels(serviceName)
+	serviceName := utils.DgraphAlphaMemberName(clusterID, name)
+	alphaLabels := DefaultAlphaLabels(serviceName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            serviceName,
 			Namespace:       ns,
-			Labels:          zeroLabels,
+			Labels:          alphaLabels,
 			OwnerReferences: []metav1.OwnerReference{dc.AsOwnerReference()},
 		},
 		Spec: corev1.ServiceSpec{
-			Type: dc.Spec.ZeroServiceType(),
+			Type: dc.Spec.AlphaServiceType(),
 			Ports: []corev1.ServicePort{
 				{
-					Name:       defaults.ZeroGRPCPortName,
-					Port:       defaults.ZeroGRPCPort,
-					TargetPort: intstr.FromInt(int(defaults.ZeroGRPCPort)),
+					Name:       defaults.AlphaGRPCPortName,
+					Port:       defaults.AlphaGRPCPort,
+					TargetPort: intstr.FromInt(int(defaults.AlphaGRPCPort)),
 					Protocol:   corev1.ProtocolTCP,
 				},
 				{
-					Name:       defaults.ZeroHTTPPortName,
-					Port:       defaults.ZeroHTTPPort,
-					TargetPort: intstr.FromInt(int(defaults.ZeroHTTPPort)),
+					Name:       defaults.AlphaHTTPPortName,
+					Port:       defaults.AlphaHTTPPort,
+					TargetPort: intstr.FromInt(int(defaults.AlphaHTTPPort)),
 					Protocol:   corev1.ProtocolTCP,
 				},
 			},
-			Selector: zeroLabels,
+			Selector: alphaLabels,
 		},
 	}
 }
 
-// NewZeroHeadlessService constructs a K8s headless service object for dgraph zero from the provided
+// NewAlphaHeadlessService constructs a K8s headless service object for dgraph Alpha from the provided
 // DgraphCluster configuration.
-func NewZeroHeadlessService(dc *v1alpha1.DgraphCluster) *corev1.Service {
-	svc := NewZeroService(dc)
+func NewAlphaHeadlessService(dc *v1alpha1.DgraphCluster) *corev1.Service {
+	svc := NewAlphaService(dc)
 
 	// Service name for headless service is of the format
-	// <clusterID>-<clusterName>-zero-headless
+	// <clusterID>-<clusterName>-alpha-headless
 	svc.Name = fmt.Sprintf("%s%s%s", svc.Name, defaults.K8SDelimeter, defaults.HeadlessServiceSuffix)
 	// Change spec for kubernetes headless service
 	svc.Spec = corev1.ServiceSpec{
@@ -97,37 +97,35 @@ func NewZeroHeadlessService(dc *v1alpha1.DgraphCluster) *corev1.Service {
 	return svc
 }
 
-// NewZeroStatefulSet constructs a K8s stateful set object for dgraph zero from the
+// NewAlphaStatefulSet constructs a K8s stateful set object for dgraph Alpha from the
 // provided DgraphCluster configuration.
-func NewZeroStatefulSet(dc *v1alpha1.DgraphCluster) *appsv1.StatefulSet {
+func NewAlphaStatefulSet(dc *v1alpha1.DgraphCluster) *appsv1.StatefulSet {
 	ns := dc.GetNamespace()
 	name := dc.GetName()
 	clusterID := dc.Spec.GetClusterID()
 
-	ssName := utils.DgraphZeroMemberName(clusterID, name)
+	ssName := utils.DgraphAlphaMemberName(clusterID, name)
+	zeroMemberName := utils.DgraphZeroMemberName(clusterID, name)
 	headlessServiceName := fmt.Sprintf("%s%s%s", ssName, defaults.K8SDelimeter, defaults.HeadlessServiceSuffix)
-	storageClassName := dc.Spec.ZeroCluster.PersistentStorage.StorageClassName
-	shardReplicaCount := dc.Spec.ZeroCluster.ShardReplicaCount()
-	zeroLabels := DefaultZeroLabels(ssName)
+	storageClassName := dc.Spec.AlphaCluster.PersistentStorage.StorageClassName
 
-	replicaCount := dc.Spec.ZeroCluster.Replicas
-	partitionCount := dc.Spec.ZeroCluster.Replicas
+	lruMB := dc.Spec.AlphaCluster.LruMB()
+	if lruMB < defaults.MinLruMBValue {
+		lruMB = defaults.LruMBValue
+	}
+	alphaLabels := DefaultAlphaLabels(ssName)
 
-	zeroRunCmd := fmt.Sprintf(`set -ex
-[[ $(hostname) =~ -([0-9]+)$ ]] || exit 1
-ordinal=${BASH_REMATCH[1]}
-idx=$(($ordinal + 1))
-if [[ $ordinal -eq 0 ]]; then
-    exec dgraph zero --my=$(hostname -f):5080 --idx $idx --replicas %d
-else
-    exec dgraph zero --my=$(hostname -f):5080 --peer %s-0.%s.${POD_NAMESPACE}.svc.cluster.local:5080 \
-        --idx $idx --replicas %d
-fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
+	replicaCount := dc.Spec.AlphaCluster.Replicas
+	partitionCount := dc.Spec.AlphaCluster.Replicas
+
+	AlphaRunCmd := fmt.Sprintf(`set -ex
+dgraph alpha --my=$(hostname -f):7080 --lru_mb %d --zero %s-0.%s-headless.${POD_NAMESPACE}.svc.cluster.local:5080
+`, lruMB, zeroMemberName, zeroMemberName)
 
 	podVolumeMounts := []corev1.VolumeMount{
 		{
 			Name:      ssName,
-			MountPath: defaults.ZeroPersistentVolumeMountPath,
+			MountPath: defaults.AlphaPersistentVolumeMountPath,
 		},
 	}
 
@@ -136,22 +134,22 @@ fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
 		Containers: []corev1.Container{
 			{
 				Name:            ssName,
-				Image:           dc.ZeroClusterSpec().Image(),
-				ImagePullPolicy: dc.ZeroClusterSpec().PodImagePullPolicy(),
+				Image:           dc.AlphaClusterSpec().Image(),
+				ImagePullPolicy: dc.AlphaClusterSpec().PodImagePullPolicy(),
 				Command: []string{
 					"/bin/bash",
 					"-c",
-					zeroRunCmd,
+					AlphaRunCmd,
 				},
 				Ports: []corev1.ContainerPort{
 					{
-						Name:          defaults.ZeroGRPCPortName,
-						ContainerPort: defaults.ZeroGRPCPort,
+						Name:          defaults.AlphaGRPCPortName,
+						ContainerPort: defaults.AlphaGRPCPort,
 						Protocol:      corev1.ProtocolTCP,
 					},
 					{
-						Name:          defaults.ZeroHTTPPortName,
-						ContainerPort: defaults.ZeroHTTPPort,
+						Name:          defaults.AlphaHTTPPortName,
+						ContainerPort: defaults.AlphaHTTPPort,
 						Protocol:      corev1.ProtocolTCP,
 					},
 				},
@@ -167,7 +165,7 @@ fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
 					},
 				},
 				VolumeMounts: podVolumeMounts,
-				Resources:    dc.ZeroClusterSpec().ResourceRequirements(),
+				Resources:    dc.AlphaClusterSpec().ResourceRequirements(),
 			},
 		},
 		RestartPolicy: corev1.RestartPolicyAlways,
@@ -177,14 +175,14 @@ fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            ssName,
 			Namespace:       ns,
-			Labels:          zeroLabels,
+			Labels:          alphaLabels,
 			OwnerReferences: []metav1.OwnerReference{dc.AsOwnerReference()},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: &replicaCount,
 
 			Selector: &metav1.LabelSelector{
-				MatchLabels: zeroLabels,
+				MatchLabels: alphaLabels,
 			},
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
@@ -195,7 +193,7 @@ fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
 
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: zeroLabels,
+					Labels: alphaLabels,
 				},
 				Spec: podSpec,
 			},
@@ -211,7 +209,7 @@ fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
 						},
 						StorageClassName: &storageClassName,
 						Resources: corev1.ResourceRequirements{
-							Requests: dc.Spec.ZeroCluster.PersistentStorage.StorageRequest(),
+							Requests: dc.Spec.AlphaCluster.PersistentStorage.StorageRequest(),
 						},
 					},
 				},

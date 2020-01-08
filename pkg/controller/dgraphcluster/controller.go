@@ -265,7 +265,12 @@ func (dc *Controller) sync(key string) error {
 
 	// Update the dgraph cluster based on the latest object we got from the
 	// kubernetes API.
-	return dc.UpdateDgraphCluster(cluster.DeepCopy())
+	err = dc.UpdateDgraphCluster(cluster.DeepCopy())
+	if err != nil {
+		glog.Errorf("error while updating dgraph cluster with provided specification: %s", err)
+	}
+
+	return err
 }
 
 // enqueueObj enqueues the object to the work queue.

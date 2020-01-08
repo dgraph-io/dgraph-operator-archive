@@ -189,6 +189,7 @@ func (cm *Manager) onStart(ctx context.Context) {
 	// (i.e. go informerFactory.Start(stopCh) Start method is non-blocking and
 	// runs all registered informers in a dedicated goroutine.
 	dgraphClusterInformer.Start(ctx.Done())
+	k8sInformerFactory.Start(ctx.Done())
 
 	for _, ctrl := range cm.registeredControllers {
 		// run the required controller.

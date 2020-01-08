@@ -49,4 +49,40 @@ const (
 
 	// ZeroHTTPPort is the port for dgraph zero HTTP communication.
 	ZeroHTTPPort int32 = 6080
+
+	// HeadlessServiceSuffix is the suffix name to associate with dgraph headless services.
+	HeadlessServiceSuffix string = "headless"
+
+	// ZeroPersistentVolumeMountPath is the mount path for persistent volume that should be
+	// attached to the zero container.
+	ZeroPersistentVolumeMountPath string = "/dgraph"
+
+	// AlphaPersistentVolumeMountPath is the mount path for persistent volume that should be
+	// attached to the alpha container.
+	AlphaPersistentVolumeMountPath string = "/dgraph"
+
+	// AlphaGRPCPortName is the name of the port for Alpha GRPC communication.
+	AlphaGRPCPortName string = "alpha-grpc"
+
+	// AlphaGRPCPort is the port for dgraph Alpha GRPC communication.
+	AlphaGRPCPort int32 = 9080
+
+	// AlphaHTTPPortName is the name of the port for Alpha HTTP communication.
+	AlphaHTTPPortName string = "alpha-http"
+
+	// AlphaHTTPPort is the port for dgraph Alpha HTTP communication.
+	AlphaHTTPPort int32 = 8080
+
+	// MinLruMBValue is minimum value of LRUMb for alpha configuration.
+	MinLruMBValue int32 = 512
+
+	// LruMBValue is default value of LRU MB to use when a non valid value is provided
+	// in the configuration.
+	LruMBValue int32 = 2048
+
+	// RatelPortName is the name of the port for Ratel UI.
+	RatelPortName string = "ratel-grpc"
+
+	// RatelPort is the port for dgraph Ratel UI.
+	RatelPort int32 = 8000
 )

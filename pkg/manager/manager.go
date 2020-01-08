@@ -21,7 +21,7 @@ import (
 )
 
 // Manager is a general interface which each member manager must implement in order
-// to sync it's state with TidbCluster state.
+// to sync it's state with DgraphCluster state.
 type Manager interface {
 	// Sync	performs the operation of syncing DgraphCluster corresponding to the
 	// manager.
