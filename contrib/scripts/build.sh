@@ -4,6 +4,8 @@ set -euo pipefail
 
 CWD=${PWD}
 
+export CGO_ENABLED=0
+
 GO_FLAGS=${GO_FLAGS:-"-tags netgo"}
 GO_CMD=${GO_CMD:-"build"}
 VERBOSE=${VERBOSE:-}
