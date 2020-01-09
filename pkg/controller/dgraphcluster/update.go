@@ -20,10 +20,12 @@ import (
 	"reflect"
 
 	dgraphio "github.com/dgraph-io/dgraph-operator/pkg/apis/dgraph.io/v1alpha1"
+	"github.com/golang/glog"
 )
 
-// UpdateDgraphCluster function handles the udpate of dgraph cluster object.
+// UpdateDgraphCluster function handles an udpate event on dgraph cluster object.
 func (dc *Controller) UpdateDgraphCluster(dcObj *dgraphio.DgraphCluster) error {
+	// We preserve the oldStatus to use later if we need to update it.
 	oldStatus := dcObj.Status.DeepCopy()
 
 	// During update we relay the logic of update to the respective managers which
@@ -37,6 +39,8 @@ func (dc *Controller) UpdateDgraphCluster(dcObj *dgraphio.DgraphCluster) error {
 	// 3. Ratel
 	//
 	// Each manager individually syncs the underlying kubernetes resources it manages.
+	// These sync are performed sequentially, so order in controller managers list
+	// must be taken care of.
 	for _, manager := range dc.managers {
 		if err := manager.Sync(dcObj); err != nil {
 			return err
@@ -59,5 +63,7 @@ func (dc *Controller) UpdateDgraphCluster(dcObj *dgraphio.DgraphCluster) error {
 func (dc *Controller) UpdateDgraphClusterStatus(
 	dcObj *dgraphio.DgraphCluster,
 	dcStatus *dgraphio.DgraphClusterStatus) error {
+
+	glog.Info("dgraph-cluster-controller: updating DgraphCluster %s status", dcObj.GetName())
 	return nil
 }

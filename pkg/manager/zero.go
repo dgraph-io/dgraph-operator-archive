@@ -31,16 +31,28 @@ import (
 )
 
 // ZeroManager manages Zero members in a dgraph cluster. It's main function is to sync
-// the Zeros in the clsuter with the required configuration in the DgraphCluster object.
+// dgraph Zeros in the clsuter with the required configuration in the DgraphCluster object.
 type ZeroManager struct {
+	// k8sClient is the kubernetes client to interact with the Kubernetes API server.
 	k8sClient kubernetes.Interface
 
+	// These represents listers which are used by managers in order to list
+	// actual resources in Kubernetes cluster.
+	// Zero only deals with below mentioned Kubernetes resources for running the
+	// cluster:
+	// 1. Pods
+	// 2. Services: There are two types of services associated with dgraph zero
+	//      - Headless Service
+	//      - Kubernetes Service as specified by user in serviceType
+	// 3. StatefulSet: StatefulSet is the actual Kubernetes abstraction under which
+	//      the zero instances run.
 	podLister         klisters.PodLister
 	svcLister         klisters.ServiceLister
 	statefulSetLister v1.StatefulSetLister
 }
 
-// NewZeroManager creates a new manager for dgraph Zero components.
+// NewZeroManager creates a new manager for dgraph zero components
+// in the clsuter.
 func NewZeroManager(
 	k8sClient kubernetes.Interface,
 	podLister klisters.PodLister,
@@ -55,8 +67,10 @@ func NewZeroManager(
 	}
 }
 
+// Sync syncs the actual Kubernetes resources with the provided configuration
+// of DgraphCluster using operator defined custom resources.
 func (zm *ZeroManager) Sync(dc *v1alpha1.DgraphCluster) error {
-	glog.Info("syncing dgraph zero components.")
+	glog.Infof("zero-manager: syncing dgraph zero components for cluster: %s", dc.GetName())
 
 	if err := zm.syncZeroServiceWithDgraphCluster(dc); err != nil {
 		return err
@@ -68,7 +82,7 @@ func (zm *ZeroManager) Sync(dc *v1alpha1.DgraphCluster) error {
 // syncZeroServiceWithDgraphCluster syncs the dgraph zero service with the DgraphCluster
 // specification provided.
 //
-// Here we create a new service type for dgraph zero and compare it with existing service
+// Here we create a new service **type** for dgraph zero and compare it with existing service
 // associated with dgraph zero cluster. If there is a difference between the two
 // we update the service to match the configuration in latest DgraphCluster object.
 //
@@ -77,14 +91,19 @@ func (zm *ZeroManager) Sync(dc *v1alpha1.DgraphCluster) error {
 // 2. Headless Service - ClusterIP with ClusterIP None
 func (zm *ZeroManager) syncZeroServiceWithDgraphCluster(dc *v1alpha1.DgraphCluster) error {
 	ns := dc.GetNamespace()
+
+	// create a new service type for zero using the dgraphcluster configuration
+	// we have.
 	svc := dgraphk8s.NewZeroService(dc)
 	serviceName := svc.GetName()
-	glog.Infof("syncing dgraph zero service(%s) with dgraph cluster specification", serviceName)
+	glog.Infof("zero-manager: syncing dgraph zero service(%s) with "+
+		"dgraph cluster specification", serviceName)
 
+	// check if there is an already existing service with the provided name.
 	oldSVC, err := zm.svcLister.Services(ns).Get(serviceName)
 	if kerrors.IsNotFound(err) {
 		// Existing service not found create a new one.
-		glog.Infof("creating new service for dgraph zero: %s", svc.GetName())
+		glog.Infof("zero-manager: creating new service for dgraph zero: %s", svc.GetName())
 		return k8s.CreateNewService(zm.k8sClient, ns, svc)
 	}
 	if err != nil {

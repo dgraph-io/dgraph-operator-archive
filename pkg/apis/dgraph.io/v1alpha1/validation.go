@@ -40,6 +40,7 @@ var (
 			"ratel":           ratelClusterSchema,
 			"baseImage":       dgraphComponentProperties["baseImage"],
 			"serviceType":     dgraphComponentProperties["serviceType"],
+			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -68,8 +69,8 @@ var (
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
-			"baseImage":       dgraphComponentProperties["baseImage"],
 			"serviceType":     dgraphComponentProperties["serviceType"],
+			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -102,8 +103,8 @@ var (
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
-			"baseImage":       dgraphComponentProperties["baseImage"],
 			"serviceType":     dgraphComponentProperties["serviceType"],
+			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
@@ -136,8 +137,8 @@ var (
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
-			"baseImage":       dgraphComponentProperties["baseImage"],
 			"serviceType":     dgraphComponentProperties["serviceType"],
+			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],

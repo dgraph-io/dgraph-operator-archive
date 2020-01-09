@@ -73,6 +73,21 @@ type Controller struct {
 	// Kubernetes API.
 	recorder record.EventRecorder
 
+	// Each controller contains a list of Managers with it. These managers are responsible
+	// for managing(in our case syncing) the managed resources in accordance with the
+	// latest version of custom resource they are managing.
+	// These manager shares the same kubernetes listers to interact with the API server.
+	// These managers are run sequentially and thus must be present in the order required
+	// for underlying resources.
+	// For example in case of DgraphCluster we have three resources managers:
+	// * AlphaManager
+	// * ZeroManager
+	// * RatelManager
+	//
+	// For a proper dgraph cluster provisioning we assume to ensure the following
+	// order in their individual syncs:
+	// Zero -> Alpha -> Ratel
+	// and they should be present in this particular order in the managers list.
 	managers []manager.Manager
 }
 
@@ -109,17 +124,18 @@ func NewController(k8sClient kubernetes.Interface,
 	ctrl.dgraphClusterLister = dgraphClusterInformer.Lister()
 	ctrl.dgraphClusterSynced = dgraphClusterInformer.Informer().HasSynced
 
+	// event handlers for DgraphCluster custom kubernetes resource.
 	dgraphClusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			glog.Info("add on DgraphCluster CRD invoked.")
+			glog.Info("dgraph-cluster-controller: add on DgraphCluster CRD invoked.")
 			ctrl.enqueueObj(obj)
 		},
 		UpdateFunc: func(old, cur interface{}) {
-			glog.Info("update on DgraphClsuter CRD invoked.")
+			glog.Info("dgraph-cluster-controller: update on DgraphClsuter CRD invoked.")
 			ctrl.enqueueObj(cur)
 		},
 		DeleteFunc: func(obj interface{}) {
-			glog.Info("delete on DgraphCluster CRD invoked.")
+			glog.Info("dgraph-cluster-controller: delete on DgraphCluster CRD invoked.")
 			ctrl.enqueueObj(obj)
 		},
 	})
@@ -160,7 +176,9 @@ func NewController(k8sClient kubernetes.Interface,
 
 // Run runs the actual underlying DgraphCluster controller.
 func (dc *Controller) Run(ctx context.Context) {
-	glog.Info("running DgraphCluster controller")
+	glog.Info("dgraph-cluster-controller: starting to run DgraphCluster controller")
+
+	// Kubernetes specific controller teardown logic.
 	defer utilruntime.HandleCrash()
 	defer dc.workqueue.ShutDown()
 
@@ -223,7 +241,7 @@ func (dc *Controller) processNextWorkItem() bool {
 		// Forget here else we'd go into a loop of attempting to
 		// process a work item that is invalid.
 		dc.workqueue.Forget(obj)
-		utilruntime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+		utilruntime.HandleError(fmt.Errorf("dgraph-cluster-controller: expected string in workqueue but got %#v", obj))
 		return true
 	}
 
@@ -232,13 +250,13 @@ func (dc *Controller) processNextWorkItem() bool {
 		// Put the item back on the workqueue to handle any transient errors.
 		// This item we be retried at later point of time.
 		dc.workqueue.AddRateLimited(objKey)
-		err = fmt.Errorf("error syncing '%s': %s, requeuing", objKey, err.Error())
+		err = fmt.Errorf("dgraph-cluster-controller: error syncing '%s': %s, requeuing", objKey, err.Error())
 	} else {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		dc.workqueue.Forget(obj)
 	}
-	glog.Infof("successfully synced '%s'", objKey)
+	glog.Infof("dgraph-cluster-controller: successfully synced '%s'", objKey)
 
 	return true
 }
@@ -246,7 +264,7 @@ func (dc *Controller) processNextWorkItem() bool {
 // Syncs the DgraphCluster resource represented by `key`
 func (dc *Controller) sync(key string) error {
 	startTime := time.Now()
-	defer glog.Infof("DgraphCluster sync done %q (%v)", key, time.Since(startTime))
+	defer glog.Infof("dgraph-cluster-controller: DgraphCluster sync done %q (%v)", key, time.Since(startTime))
 
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -256,7 +274,12 @@ func (dc *Controller) sync(key string) error {
 	// Get the latest DgraphCluster CRD object from the API server we are syncing here.
 	cluster, err := dc.dgraphClusterLister.DgraphClusters(namespace).Get(name)
 	if kerrors.IsNotFound(err) {
-		glog.Infof("DgraphCluster(%q) has already been deleted", key)
+		// If a dgraph cluster has already been deleted then we don't do anything
+		// this is because all the resources we create using dgraph controllers
+		// have owner reference attached to this particular type.
+		// So once an object is deleted, all the additional resources associated
+		// with it are also deleted.
+		glog.Infof("dgraph-cluster-controller: DgraphCluster(%q) has already been deleted", key)
 		return nil
 	}
 	if err != nil {
@@ -265,9 +288,12 @@ func (dc *Controller) sync(key string) error {
 
 	// Update the dgraph cluster based on the latest object we got from the
 	// kubernetes API.
+	// Each controller similar to DgraphCluster one must implement an update function which
+	// updates the underlying resources based on the latest configuration
+	// we got from the kubernetes API server.
 	err = dc.UpdateDgraphCluster(cluster.DeepCopy())
 	if err != nil {
-		glog.Errorf("error while updating dgraph cluster with provided specification: %s", err)
+		glog.Errorf("dgraph-cluster-controller: error while updating dgraph cluster with provided specification: %s", err)
 	}
 
 	return err
@@ -277,9 +303,9 @@ func (dc *Controller) sync(key string) error {
 func (dc *Controller) enqueueObj(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("Cound't get key for object %+v: %v", obj, err))
+		utilruntime.HandleError(fmt.Errorf("dgraph-cluster-controller: cound't get key for object %+v: %v", obj, err))
 		return
 	}
-	glog.Infof("enqueuing %q", key)
+	glog.Infof("dgraph-cluster-controller: enqueuing %q in workqueue", key)
 	dc.workqueue.Add(key)
 }

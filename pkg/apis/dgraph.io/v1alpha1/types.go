@@ -29,6 +29,17 @@ import (
 // ClusterState represents the state of the cluster.
 type ClusterState string
 
+var (
+	// ClusterStateCreating represents that the cluster is being created.
+	ClusterStateCreating ClusterState = "creating"
+
+	// ClusterStateRunning represents that the cluster is being udpated.
+	ClusterStateRunning ClusterState = "running"
+
+	// ClusterStateUpdating represents that the cluster is being udpated.
+	ClusterStateUpdating ClusterState = "updating"
+)
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -149,7 +160,7 @@ type DgraphClusterSpec struct {
 	// as that of DgraphComponentSpec but are cluster level, they can be overridden
 	// inside individual component configuration.
 
-	// Base image of the component
+	// Base image to use for dgraph cluster individual components, this can be overridden
 	BaseImage string `json:"baseImage"`
 
 	// Version of the component. Override the cluster-level version if non-empty
@@ -205,9 +216,9 @@ func (dc *DgraphClusterSpec) GetClusterID() string {
 // DgraphClusterStatus represents the status of a DgraphCluster.
 type DgraphClusterStatus struct {
 	// ClusterID is the ID of the dgraph cluster deployed.
-	ClusterID string `json:"cluster_id"`
+	ClusterID string `json:"clusterID"`
 
-	State ClusterState `json:"state,omitempty"`
+	State ClusterState `json:"state"`
 
 	// Status of individual dgraph components like alpha, zero and ratel.
 	AlphaCluster AlphaClusterStatus `json:"alpha,omitempty"`
@@ -292,6 +303,12 @@ type RatelSpec struct {
 
 // RatelStatus holds the status of dgraph ratel component.
 type RatelStatus struct {
+	// Deployment is the status of stateful set associated with the specified
+	// ratel cluster.
+	Deployment *apps.DeploymentStatus `json:"deployment,omitempty"`
+
+	// Members is the map of members in the zero cluster.
+	Members map[string]DgraphComponent `json:"members,omitempty"`
 }
 
 // +k8s:openapi-gen=true
