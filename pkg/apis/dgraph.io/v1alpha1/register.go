@@ -159,26 +159,6 @@ func createDgraphClusterCRD(clientset apiextclient.Interface) error {
 	return createUpdateCRD(clientset, "DgraphCluster/v1alpha1", res)
 }
 
-var (
-	dgraphClusterCRV = &apiextv1.CustomResourceValidation{
-		OpenAPIV3Schema: &apiextv1.JSONSchemaProps{
-			Type:       "object",
-			Properties: dgraphClusterProperties,
-		},
-	}
-
-	dgraphClusterProperties = map[string]apiextv1.JSONSchemaProps{
-		"ClusterID": clusterIDSchema,
-	}
-
-	maxClusterIDLen int64 = 64
-	clusterIDSchema       = apiextv1.JSONSchemaProps{
-		Description: "Unique ID of the dgraph cluster deployment.",
-		Type:        "string",
-		MaxLength:   &maxClusterIDLen,
-	}
-)
-
 // createUpdateCRD ensures the CRD object is created in the k8s cluster. It
 // will create or update the CRD.
 func createUpdateCRD(clientset apiextclient.Interface, crdName string,

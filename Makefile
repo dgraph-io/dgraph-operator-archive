@@ -68,4 +68,8 @@ check-cmdref: build
 > $(QUIET)echo "[*] Checking dgraph opeartor command line reference."
 > $(QUIET)./contrib/scripts/cmdref_check.sh
 
-.PHONY: build format govet check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api
+fix-lint:
+> $(QUIET)echo "[*] Fixing lint errors using golangci-lint"
+> $(QUIET)golangci-lint run ./cmd/... --fix
+
+.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api

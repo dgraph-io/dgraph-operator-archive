@@ -17,12 +17,18 @@
 package v1alpha1
 
 import (
+	apps "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// ClusterState represents the state of the cluster.
+type ClusterState string
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +k8s:openapi-gen=true
 // DgraphCluster is a Kubernetes custom resource which represents a
 // dgraph cluster.
 type DgraphCluster struct {
@@ -38,6 +44,7 @@ type DgraphCluster struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +k8s:openapi-gen=true
 // DgraphClusterList is the list of DgraphCluster in the k8s cluster.
 type DgraphClusterList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -47,22 +54,171 @@ type DgraphClusterList struct {
 	Items []DgraphCluster `json:"items"`
 }
 
+// +k8s:openapi-gen=true
 // DgraphClusterSpec is the underlying specification of the DgraphCluster
 // CRD.
+// There are three important components of a Dgraph Cluster
+// 1. Alpha
+// 2. Zero
+// 3. Ratel(optional)
 type DgraphClusterSpec struct {
 	// ClusterID is the ID of the dgraph cluster deployed.
-	ClusterID string `json:"cluster_id"`
+	ClusterID string `json:"clusterID"`
+
+	// Cluster specification for dgraph alpha components.
+	AlphaCluster AlphaClusterSpec `json:"alpha"`
+
+	// Cluster specification for dgraph zero components.
+	ZeroCluster ZeroClusterSpec `json:"zero"`
+
+	// Specification for dgraph ratel component for providing UI.
+	Ratel RatelSpec `json:"ratel,omitempty"`
+
+	// Below variables are more or less same
+	// as that of DgraphComponentSpec but are cluster level, they can be overridden
+	// inside individual component configuration.
+
+	// Base image of the component
+	BaseImage string `json:"baseImage"`
+
+	// Version of the component. Override the cluster-level version if non-empty
+	Version string `json:"version"`
+
+	// ImagePullPolicy of the dgraph component.
+	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// Annotations of the component.
+	// Cluster level annotation is not overridden by the component configuration
+	// rather merged with the underlying specified annotations.
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// Resource requirements of the components, this can be overridden at component level.
+	corev1.ResourceRequirements `json:",inline"`
 }
 
 // DgraphClusterStatus represents the status of a DgraphCluster.
 type DgraphClusterStatus struct {
-	// Members is the status for each dgraph cluster member.
-	Members map[string]DgraphClusterMemberStatus `json:"members,omitempty"`
+	// ClusterID is the ID of the dgraph cluster deployed.
+	ClusterID string `json:"cluster_id"`
+
+	State ClusterState `json:"state,omitempty"`
+
+	// Status of individual dgraph components like alpha, zero and ratel.
+	AlphaCluster AlphaClusterStatus `json:"alpha,omitempty"`
+	ZeroCluster  ZeroClusterStatus  `json:"zero,omitempty"`
+	Ratel        RatelStatus        `json:"ratel,omitempty"`
 }
 
-// DgraphClusterMemberStatus represents the status of individual member in a
-// dgraph cluster.
-type DgraphClusterMemberStatus struct {
-	// Healthy represents if the member is healthy or not.
-	Healthy bool `json:"healthy"`
+// +k8s:openapi-gen=true
+// AlphaClusterSpec is the specification of the dgraph alpha cluster.
+type AlphaClusterSpec struct {
+	DgraphComponentSpec `json:",inline"`
+
+	// Number of replicas to run in the cluster.
+	Replicas int32 `json:"replicas"`
+
+	// StorageClass to use as persistent volume for the componnet.
+	StorageClassName string `json:"storageClassName,omitempty"`
+
+	// Config is the configuration of the dgraph component.
+	Config *AlphaConfig `json:"config,omitempty"`
+}
+
+// AlphaClusterStatus represents the cluster status of dgraph alpha components.
+type AlphaClusterStatus struct {
+	// StatefulSet is the status of stateful set associated with the specified
+	// alpha cluster.
+	StatefulSet *apps.StatefulSetStatus `json:"statefulSet,omitempty"`
+
+	// Members is the map of members in the alpha cluster.
+	Members map[string]DgraphComponent `json:"members,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+// ZeroClusterSpec is the specification of the dgraph alpha cluster.
+type ZeroClusterSpec struct {
+	DgraphComponentSpec `json:",inline"`
+
+	// Number of replicas to run in the cluster.
+	Replicas int32 `json:"replicas"`
+
+	// StorageClass to use as persistent volume for the componnet.
+	StorageClassName string `json:"storageClassName,omitempty"`
+
+	// Config is the configuration of the dgraph zero.
+	Config *ZeroConfig `json:"config,omitempty"`
+}
+
+// ZeroClusterStatus represents the cluster status of dgraph alpha components.
+type ZeroClusterStatus struct {
+	// StatefulSet is the status of stateful set associated with the specified
+	// zero cluster.
+	StatefulSet *apps.StatefulSetStatus `json:"statefulSet,omitempty"`
+
+	// Members is the map of members in the zero cluster.
+	Members map[string]DgraphComponent `json:"members,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+// RatelSpec holds the configuration of dgraph ratel components.
+type RatelSpec struct {
+	DgraphComponentSpec `json:",inline"`
+
+	// Number of replicas of ratel to run in the cluster.
+	Replicas int32 `json:"replicas"`
+}
+
+// RatelStatus holds the status of dgraph ratel component.
+type RatelStatus struct {
+}
+
+// +k8s:openapi-gen=true
+// DgraphComponentSpec is the common configuration values shared among different
+// dgraph components.
+type DgraphComponentSpec struct {
+	// Resource requirements of the components.
+	corev1.ResourceRequirements `json:",inline"`
+
+	// Base image of the component
+	BaseImage string `json:"baseImage,omitempty"`
+
+	// Version of the component. Override the cluster-level version if non-empty
+	Version string `json:"version,omitempty"`
+
+	// ImagePullPolicy of the dgraph component.
+	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// Annotations of the component.
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+// DgraphComponent represents a single member of either alpha or zero cluster.
+type DgraphComponent struct {
+	Name string `json:"name"`
+
+	ID           string `json:"id"`
+	ComponentURL string `json:"componentURL"`
+	Healthy      bool   `json:"health"`
+}
+
+// +k8s:openapi-gen=true
+// AlphaConfig is the configuration for dgraph alpha component.
+type AlphaConfig struct {
+	DgraphConfig `json:",inline"`
+}
+
+// +k8s:openapi-gen=true
+// ZeroConfig is the configuration of dgraph zero component.
+type ZeroConfig struct {
+	DgraphConfig `json:",inline"`
+
+	// ShardReplicaCount is the max number of replicas per data shard.
+	ShardReplicaCount int32 `json:"shardReplicaCount,omitempty"`
+}
+
+// +k8s:openapi-gen=true
+// DgraphConfig is the common configuration for dgraph components.
+type DgraphConfig struct {
+	// URL of the jaeger collector for dgraph alpha and zero components.
+	JaegerCollector string `json:"jaegerCollector,omitempty"`
 }
