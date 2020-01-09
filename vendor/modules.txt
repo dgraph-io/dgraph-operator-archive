@@ -28,6 +28,8 @@ github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
 # github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 github.com/golang/glog
+# github.com/golang/groupcache v0.0.0-20160516000752-02826c3e7903
+github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -42,6 +44,8 @@ github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
 # github.com/google/gofuzz v1.0.0
 github.com/google/gofuzz
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
 # github.com/googleapis/gnostic v0.0.0-20170729233727-0c5108395e2d
 github.com/googleapis/gnostic/OpenAPIv2
 github.com/googleapis/gnostic/compiler
@@ -320,8 +324,12 @@ k8s.io/client-go/tools/clientcmd
 k8s.io/client-go/tools/clientcmd/api
 k8s.io/client-go/tools/clientcmd/api/latest
 k8s.io/client-go/tools/clientcmd/api/v1
+k8s.io/client-go/tools/leaderelection
+k8s.io/client-go/tools/leaderelection/resourcelock
 k8s.io/client-go/tools/metrics
 k8s.io/client-go/tools/pager
+k8s.io/client-go/tools/record
+k8s.io/client-go/tools/record/util
 k8s.io/client-go/tools/reference
 k8s.io/client-go/transport
 k8s.io/client-go/util/cert

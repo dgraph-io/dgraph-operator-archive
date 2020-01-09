@@ -16,10 +16,28 @@
 
 package defaults
 
+import (
+	"time"
+)
+
 const (
 	// OperatorHost is the default host for the operator server.
 	OperatorHost string = "0.0.0.0"
 
 	// OperatorPort is the default port that operator server listens to.
 	OperatorPort int = 7777
+
+	// LeaseLockName is the default value of lease lock we acquire when doing leader elections
+	// among the operators.
+	LeaseLockName string = "dgraph-io-controller-manager"
+
+	// LeaderElectionLeaseDuration is the lease duration for leader election among the opearators.
+	LeaderElectionLeaseDuration time.Duration = 15 * time.Second
+
+	// LeaderElectionRenewDeadline is the renew deadline for the leader election among operators.
+	LeaderElectionRenewDeadline time.Duration = 5 * time.Second
+
+	// LeaderElectionRetryPeriod is the retry period of current operator for leader election
+	// among operators.
+	LeaderElectionRetryPeriod time.Duration = 3 * time.Second
 )

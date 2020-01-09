@@ -27,5 +27,5 @@ const (
 
 	// K8SAPIServerRequestTimeout is the default value of timeout for the request to
 	// Kubernetes API server.
-	K8SAPIServerRequestTimeout time.Duration = 60 * time.Second
+	K8SAPIServerRequestTimeout time.Duration = 20 * time.Second
 )
