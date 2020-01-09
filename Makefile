@@ -13,12 +13,21 @@ endif
 export GO111MODULE := on
 ROOTDIR := $(shell pwd)
 VENDORDIR := $(ROOTDIR)/vendor
-GO := go
 QUIET=@
 VERIFYARGS ?=
 
-pkgs = $(shell $(GO) list ./cmd/... | grep -v vendor)
-pkgs += $(shell $(GO) list ./pkg/...)
+GOOS := $(if $(GOOS),$(GOOS),linux)
+GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
+GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
+GO     := $(GOENV) go
+GO_BUILD := $(GO) build -trimpath
+
+# SET DOCKER_REGISTRY to change the docker registry
+DOCKER_REGISTRY := $(if $(DOCKER_REGISTRY),"$(DOCKER_REGISTRY)/","")
+# Use git tag as the image tag if present, else use latest.
+IMAGE_TAG ?= $(shell git describe --always --tags 2> /dev/null || echo 'latest')
+
+pkgs = $(shell $(GO) list ./... | grep -v vendor)
 
 define generate_k8s_api
 	$(QUIET)bash $(VENDORDIR)/k8s.io/code-generator/generate-groups.sh \
@@ -48,6 +57,12 @@ build:
 > $(QUIET)echo "[*] Building dgraph-operator"
 > $(QUIET)./contrib/scripts/build.sh
 
+build-linux: export GOOS=linux
+build-linux: export GOARCH=amd64
+build-linux:
+> $(QUIET)echo "[*] Building dgraph-operator"
+> $(QUIET)./contrib/scripts/build.sh
+
 format:
 > $(QUIET)echo "[*] Formatting code"
 > $(QUIET)$(GO) fmt $(pkgs)
@@ -58,7 +73,7 @@ govet:
 
 check-lint:
 > $(QUIET)echo "[*] Checking lint errors using golangci-lint"
-> $(QUIET)golangci-lint run ./cmd/...
+> $(QUIET)golangci-lint run ./...
 
 generate-cmdref: build
 > $(QUIET)echo "[*] Generating cmdref for dgraph-operator"
@@ -70,6 +85,13 @@ check-cmdref: build
 
 fix-lint:
 > $(QUIET)echo "[*] Fixing lint errors using golangci-lint"
-> $(QUIET)golangci-lint run ./cmd/... --fix
+> $(QUIET)golangci-lint run ./... --fix
 
-.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api
+docker: build-linux
+> $(QUIET)echo '[*] Building docker image'
+> $(QUIET)docker build --tag "${DOCKER_REGISTRY}dgraph/dgraph-operator:${IMAGE_TAG}" -f contrib/docker/operator/Dockerfile .
+
+docker-push: docker
+> $(QUIET)docker push "${DOCKER_REGISTRY}dgraph/dgraph-operator:${IMAGE_TAG}"
+
+.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api docker docker-push

@@ -1,5 +1,8 @@
 language: go
 
+os:
+  - linux
+
 sudo: false
 dist: bionic
 go: 1.13.x
@@ -9,4 +12,5 @@ notifications:
 
 script:
   - make build
+  - make build-linux
   - make check-cmdref
