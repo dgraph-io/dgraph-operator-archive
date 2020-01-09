@@ -13,9 +13,18 @@ endif
 export GO111MODULE := on
 ROOTDIR := $(shell pwd)
 VENDORDIR := $(ROOTDIR)/vendor
-GO := go
 QUIET=@
 VERIFYARGS ?=
+
+GOOS := $(if $(GOOS),$(GOOS),linux)
+GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
+GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
+GO     := $(GOENV) go
+GO_BUILD := $(GO) build -trimpath
+
+# SET DOCKER_REGISTRY to change the docker registry
+DOCKER_REGISTRY := $(if $(DOCKER_REGISTRY),$(DOCKER_REGISTRY),localhost:5000)
+IMAGE_TAG ?= latest
 
 pkgs = $(shell $(GO) list ./cmd/... | grep -v vendor)
 pkgs += $(shell $(GO) list ./pkg/...)
@@ -72,4 +81,11 @@ fix-lint:
 > $(QUIET)echo "[*] Fixing lint errors using golangci-lint"
 > $(QUIET)golangci-lint run ./cmd/... --fix
 
-.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api
+docker: build
+> $(QUIET)echo '[*] Building docker image'
+> $(QUIET)docker build --tag "${DOCKER_REGISTRY}/dgraph-io/dgraph-operator:${IMAGE_TAG}" -f contrib/docker/operator/Dockerfile .
+
+docker-push: docker
+> $(QUIET)docker push "${DOCKER_REGISTRY}/dgraph-io/dgraph-operator:${IMAGE_TAG}"
+
+.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api docker docker-push
