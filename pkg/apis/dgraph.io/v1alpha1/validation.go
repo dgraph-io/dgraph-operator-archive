@@ -38,10 +38,12 @@ var (
 			"alpha":           alphaClusterSchema,
 			"zero":            zeroClusterSchema,
 			"ratel":           ratelClusterSchema,
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
+			"resources":       resourceRequirementsSchema,
 		},
 		Required: []string{
 			"clusterID",
@@ -66,19 +68,25 @@ var (
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"requests":        dgraphComponentProperties["requests"],
-			"limits":          dgraphComponentProperties["limits"],
+			"resources":       resourceRequirementsSchema,
+
 			"replicas": {
 				Description: "Number of replicas to run for alpha in the cluster.",
 				Type:        "number",
 			},
-			"storageClassName": {
-				Description: "Storage class to use for the component.",
-				Type:        "string",
+			"persistentStorage": {
+				Description: "Storage configuration for the persistent volume for the component.",
+				Type:        "object",
+				Required: []string{
+					"storageClassName",
+					"requests",
+				},
+				Properties: dgraphPersistentStorageProperties,
 			},
 			"config": {
 				Description: "Config for dgraph alpha.",
@@ -94,20 +102,25 @@ var (
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"requests":        dgraphComponentProperties["requests"],
-			"limits":          dgraphComponentProperties["limits"],
+			"resources":       resourceRequirementsSchema,
 
 			"replicas": {
 				Description: "Number of replicas to run for alpha in the cluster.",
 				Type:        "number",
 			},
-			"storageClassName": {
-				Description: "Storage class to use for the component.",
-				Type:        "string",
+			"persistentStorage": {
+				Description: "Storage configuration for the persistent volume for the component.",
+				Type:        "object",
+				Required: []string{
+					"storageClassName",
+					"requests",
+				},
+				Properties: dgraphPersistentStorageProperties,
 			},
 			"config": {
 				Description: "Config for dgraph alpha.",
@@ -123,12 +136,12 @@ var (
 			"replicas",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
+			"serviceType":     dgraphComponentProperties["serviceType"],
 			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"requests":        dgraphComponentProperties["requests"],
-			"limits":          dgraphComponentProperties["limits"],
+			"resources":       resourceRequirementsSchema,
 
 			"replicas": {
 				Description: "Number of replicas to run for ratel in the cluster.",
@@ -142,6 +155,11 @@ var (
 			Description: "Base image(without tag) to use for dgraph component cluster.",
 			Type:        "string",
 		},
+		"serviceType": {
+			Description: "Kubernetes service type to use for the Dgraph cluster component " +
+				"(one of ClusterIP, LoadBalancer, NodePort).",
+			Type: "string",
+		},
 		"version": {
 			Description: "Version of the dgraph component to use in the clsuter.",
 			Type:        "string",
@@ -154,19 +172,46 @@ var (
 			Description: "Annotations to apply on the kubernetes container object.",
 			Type:        "object",
 		},
-		"limits": {
-			Description: "Limits describes the maximum amount of compute resources allowed." +
-				" More info: " +
-				"https://k8s.io/docs/concepts/configuration/manage-compute-resources-container/.",
-			Type: "object",
+	}
+
+	resourceRequirementsSchema = apiextv1.JSONSchemaProps{
+		Description: "Resource requirements for the component.",
+		Type:        "object",
+		Properties: map[string]apiextv1.JSONSchemaProps{
+			"limits": {
+				Description: "Limits describes the maximum amount of compute resources " +
+					"allowed. More info: " +
+					" https://k8s.io/docs/concepts/configuration/manage-compute-resources-container/.",
+				Type: "object",
+			},
+			"requests": {
+				Description: "Requests describes the minimum amount of compute resources " +
+					"required. If Requests is omitted for a container, it defaults " +
+					"to Limits if that is explicitly specified, otherwise to an implementation-defined " +
+					"value. More info: " +
+					" https://k8s.io/docs/concepts/configuration/manage-compute-resources-container/",
+				Type: "object",
+			},
 		},
+	}
+
+	dgraphPersistentStorageProperties = map[string]apiextv1.JSONSchemaProps{
 		"requests": {
-			Description: "Requests describes the minimum amount of compute resources" +
-				"required. If Requests is omitted for a container, it defaults" +
-				"to Limits if that is explicitly specified, otherwise to an " +
-				"implementation-defined value. More info: " +
-				"https://k8s.io/docs/concepts/configuration/manage-compute-resources-container/",
-			Type: "object",
+			Description: resourceRequirementsSchema.Properties["requests"].Description,
+			Type:        "object",
+			Required: []string{
+				"storage",
+			},
+			Properties: map[string]apiextv1.JSONSchemaProps{
+				"storage": {
+					Description: "Storage requests for the component.",
+					Type:        "string",
+				},
+			},
+		},
+		"storageClassName": {
+			Description: "Storage class to use for the component.",
+			Type:        "string",
 		},
 	}
 )

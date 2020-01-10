@@ -1,16 +1,24 @@
 apiVersion: dgraph.io/v1alpha1
 kind: DgraphCluster
 metadata:
-  name: dgraph-test-cluster
-  namespace: default
+    name: dgraph-test-cluster
+    namespace: default
 spec:
-  clusterID: dgraph-test-cluster-0x000
-  imagePullPolicy: Always
-  baseImage: dgraph/dgraph
-  version: v1.1.1
-  alpha:
-    replicas: 3
-    storageClassName: dgraph-storage
-  zero:
-    replicas: 3
-    storageClassName: dgraph-storage
+    clusterID: "xxxx"
+    imagePullPolicy: Always
+    baseImage: dgraph/dgraph
+    version: v1.1.1
+    alpha:
+        replicas: 3
+        persistentStorage:
+            storageClassName: standard
+            requests:
+                storage: 3Gi
+    zero:
+        replicas: 3
+        persistentStorage:
+            storageClassName: standard
+            requests:
+                storage: 3Gi
+    ratel:
+        replicas: 2

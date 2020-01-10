@@ -17,10 +17,53 @@
 package dgraphcluster
 
 import (
+	"reflect"
+
 	dgraphio "github.com/dgraph-io/dgraph-operator/pkg/apis/dgraph.io/v1alpha1"
+	"github.com/golang/glog"
 )
 
-// This function handles the udpate of dgraph cluster object.
-func (dc *Controller) updateDgraphCluster(dcObj *dgraphio.DgraphCluster) error {
+// UpdateDgraphCluster function handles an udpate event on dgraph cluster object.
+func (dc *Controller) UpdateDgraphCluster(dcObj *dgraphio.DgraphCluster) error {
+	// We preserve the oldStatus to use later if we need to update it.
+	oldStatus := dcObj.Status.DeepCopy()
+
+	// During update we relay the logic of update to the respective managers which
+	// are the managers for individual top level resource as understood by DgraphCluster
+	// This is because they may have different strategies for update being different in
+	// terms of usage.
+	//
+	// These top level resources includes
+	// 1. Alpha
+	// 2. Zero
+	// 3. Ratel
+	//
+	// Each manager individually syncs the underlying kubernetes resources it manages.
+	// These sync are performed sequentially, so order in controller managers list
+	// must be taken care of.
+	for _, manager := range dc.managers {
+		if err := manager.Sync(dcObj); err != nil {
+			return err
+		}
+	}
+
+	// Check if the status is same as the old status or not, if not then udpate the
+	// status of the DgraphCluster object.
+	if !reflect.DeepEqual(dcObj.Status, oldStatus) {
+		if err := dc.UpdateDgraphClusterStatus(dcObj, &dcObj.Status); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// UpdateDgraphClusterStatus updates the status of the DgraphCluster object represented by dcObj
+// with the status represented in dcStatus.
+func (dc *Controller) UpdateDgraphClusterStatus(
+	dcObj *dgraphio.DgraphCluster,
+	dcStatus *dgraphio.DgraphClusterStatus) error {
+
+	glog.Infof("dgraph-cluster-controller: updating DgraphCluster %s status", dcObj.GetName())
 	return nil
 }

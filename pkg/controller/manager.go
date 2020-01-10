@@ -31,6 +31,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -38,6 +39,9 @@ import (
 )
 
 // Manager manages all the controllers for the operator.
+// This is the top level manager for all the underlying controllers and managers.
+// All controllers which operator manages should be in the registered controller list
+// of Manager.
 type Manager struct {
 	k8sClient    kubernetes.Interface
 	dgraphClient versioned.Interface
@@ -47,7 +51,11 @@ type Manager struct {
 
 // Controller is the standard interface which each controller within dgraph operator
 // must implement.
+// List of configured controllers managed by dgraph operator as of now are:
+// * DgraphClusterController
 type Controller interface {
+	// Run starts running the controller watching for required kubernetes resources
+	// and associating required handler with resource events.
 	Run(context.Context)
 }
 
@@ -64,6 +72,9 @@ func MustNewControllerManager() *Manager {
 		glog.Fatalf("error while building dgraph k8s client")
 	}
 
+	// We register controller during manager run. This is to make sure that
+	// Different controller can also share the same informer factory
+	// from kubernetes.
 	registeredControllers := make([]Controller, 0)
 
 	return &Manager{
@@ -176,21 +187,33 @@ func (cm *Manager) onStart(ctx context.Context) {
 	}()
 
 	dgraphClusterInformer := informers.NewSharedInformerFactory(
-		cm.dgraphClient, defaults.InformerResyncDuration)
+		cm.dgraphClient,
+		defaults.InformerResyncDuration)
+	k8sInformerFactory := k8sinformers.NewSharedInformerFactory(
+		cm.k8sClient,
+		defaults.InformerResyncDuration)
+
+	// Add dgraph controller to registered controller list of the controller manager.
 	cm.registeredControllers = append(cm.registeredControllers, dc.NewController(
 		cm.k8sClient,
 		cm.dgraphClient,
 		dgraphClusterInformer.Dgraph().V1alpha1().DgraphClusters(),
+		k8sInformerFactory,
 	))
 
 	// notice that there is no need to run Start methods in a separate goroutine.
 	// (i.e. go informerFactory.Start(stopCh) Start method is non-blocking and
 	// runs all registered informers in a dedicated goroutine.
 	dgraphClusterInformer.Start(ctx.Done())
+	k8sInformerFactory.Start(ctx.Done())
 
+	// Iterate through all the registered controllers and run them in a
+	// separate goroutine.
 	for _, ctrl := range cm.registeredControllers {
-		ctrl.Run(ctx)
+		// run the required controller.
+		go ctrl.Run(ctx)
 	}
 
-	select {}
+	glog.Info("all controllers configured and are now running.")
+	<-ctx.Done()
 }
