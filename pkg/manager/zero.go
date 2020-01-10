@@ -120,18 +120,21 @@ func (zm *ZeroManager) syncZeroServiceWithDgraphCluster(dc *v1alpha1.DgraphClust
 	if !apiequality.Semantic.DeepDerivative(svc.Spec, oldSVC.Spec) {
 		updateSVC := *oldSVC
 		updateSVC.Spec = svc.Spec
-		glog.Info("updating service for dgraph zero")
+		glog.Info("zero-manager: updating service for dgraph zero")
 		if _, err = k8s.UpdateService(zm.k8sClient, ns, &updateSVC); err != nil {
 			return err
 		}
+	} else {
+		glog.Info("zero-manager: no change found in dgraph zero service")
 	}
 
-	glog.Info("syncing dgraph zero headless service with dgraph cluster specification")
+	glog.Info("zero-manager: syncing dgraph zero headless service with dgraph " +
+		" cluster specification")
 	headlessSVC := dgraphk8s.NewZeroHeadlessService(dc)
 	oldHeadlessSVC, err := zm.svcLister.Services(ns).Get(headlessSVC.GetObjectMeta().GetName())
 	if kerrors.IsNotFound(err) {
 		// Existing service not found create a new one.
-		glog.Info("creating new headless service for dgraph zero")
+		glog.Info("zero-manager: creating new headless service for dgraph zero")
 		return k8s.CreateNewService(zm.k8sClient, ns, headlessSVC)
 	}
 	if err != nil {
@@ -140,12 +143,13 @@ func (zm *ZeroManager) syncZeroServiceWithDgraphCluster(dc *v1alpha1.DgraphClust
 
 	// If the old service and new service spec is same don't change anything.
 	if apiequality.Semantic.DeepDerivative(headlessSVC.Spec, oldHeadlessSVC.Spec) {
+		glog.Info("zero-manager: no change found in dgraph zero headless service")
 		return nil
 	}
 
 	headlessSVCUpdate := *oldHeadlessSVC
 	headlessSVCUpdate.Spec = headlessSVC.Spec
-	glog.Info("udpating headless service for dgraph zero")
+	glog.Info("zero-manager: udpating headless service for dgraph zero")
 	_, err = k8s.UpdateService(zm.k8sClient, ns, &headlessSVCUpdate)
 
 	return err
@@ -154,14 +158,14 @@ func (zm *ZeroManager) syncZeroServiceWithDgraphCluster(dc *v1alpha1.DgraphClust
 // syncZeroStatefulSetWithDgraphCluster syncs the dgraph zero service with the DgraphCluster
 // specification provided.
 func (zm *ZeroManager) syncZeroStatefulSetWithDgraphCluster(dc *v1alpha1.DgraphCluster) error {
-	glog.Info("syncing dgraph zero stateful set with dgraph cluster specification")
+	glog.Info("zero-manager: syncing dgraph zero stateful set with dgraph cluster specification")
 	ns := dc.GetNamespace()
 
 	zeroStatefulSet := dgraphk8s.NewZeroStatefulSet(dc)
 	zeroStatefulSetOld, err := zm.statefulSetLister.StatefulSets(ns).
 		Get(utils.DgraphZeroMemberName(dc.Spec.GetClusterID(), dc.GetObjectMeta().GetName()))
 	if kerrors.IsNotFound(err) {
-		glog.Info("creating new stateful set for zero corresponding to DgraphCluster configuration spec")
+		glog.Info("zero-manager: creating new stateful set for zero for DgraphCluster spec")
 		return k8s.CreateNewStatefulSet(zm.k8sClient, ns, zeroStatefulSet)
 	}
 	if err != nil {
@@ -169,7 +173,8 @@ func (zm *ZeroManager) syncZeroStatefulSetWithDgraphCluster(dc *v1alpha1.DgraphC
 	}
 
 	// If the old service and new service spec is same don't change anything.
-	if apiequality.Semantic.DeepDerivative(zeroStatefulSet.Spec.Template, zeroStatefulSetOld.Spec.Template) {
+	if apiequality.Semantic.DeepDerivative(zeroStatefulSet.Spec, zeroStatefulSetOld.Spec) {
+		glog.Info("zero-manager: no change found for dgraph zero stateful set spec")
 		return nil
 	}
 

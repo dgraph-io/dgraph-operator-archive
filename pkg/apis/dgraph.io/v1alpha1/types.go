@@ -74,6 +74,10 @@ func (dc *DgraphCluster) AsOwnerReference() metav1.OwnerReference {
 }
 
 func (dc *DgraphCluster) internalComponentOverride(dcs *DgraphComponentSpec) {
+	if dcs.BaseImage == "" {
+		dcs.BaseImage = dc.Spec.BaseImage
+	}
+
 	if dcs.Version == "" {
 		dcs.Version = dc.Spec.Version
 	}

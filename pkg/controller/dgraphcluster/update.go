@@ -64,6 +64,6 @@ func (dc *Controller) UpdateDgraphClusterStatus(
 	dcObj *dgraphio.DgraphCluster,
 	dcStatus *dgraphio.DgraphClusterStatus) error {
 
-	glog.Info("dgraph-cluster-controller: updating DgraphCluster %s status", dcObj.GetName())
+	glog.Infof("dgraph-cluster-controller: updating DgraphCluster %s status", dcObj.GetName())
 	return nil
 }

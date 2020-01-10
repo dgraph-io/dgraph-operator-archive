@@ -1,10 +1,10 @@
 apiVersion: dgraph.io/v1alpha1
 kind: DgraphCluster
 metadata:
-    name: dgraph-test-cluster-2
+    name: dgraph-test-cluster
     namespace: default
 spec:
-    clusterID: "yyyy"
+    clusterID: "xxxx"
     imagePullPolicy: Always
     baseImage: dgraph/dgraph
     version: v1.1.1

@@ -38,7 +38,6 @@ var (
 			"alpha":           alphaClusterSchema,
 			"zero":            zeroClusterSchema,
 			"ratel":           ratelClusterSchema,
-			"baseImage":       dgraphComponentProperties["baseImage"],
 			"serviceType":     dgraphComponentProperties["serviceType"],
 			"baseImage":       dgraphComponentProperties["baseImage"],
 			"version":         dgraphComponentProperties["version"],
