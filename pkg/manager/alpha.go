@@ -125,7 +125,7 @@ func (am *AlphaManager) syncAlphaServiceWithDgraphCluster(dc *v1alpha1.DgraphClu
 
 	headlessSVCUpdate := *oldHeadlessSVC
 	headlessSVCUpdate.Spec = headlessSVC.Spec
-	glog.Info("udpating headless service for dgraph alpha")
+	glog.Info("updating headless service for dgraph alpha")
 	_, err = k8s.UpdateService(am.k8sClient, ns, &headlessSVCUpdate)
 
 	return err
@@ -149,13 +149,15 @@ func (am *AlphaManager) syncAlphaStatefulSetWithDgraphCluster(dc *v1alpha1.Dgrap
 	}
 
 	// If the old service and new service spec is same don't change anything.
-	if apiequality.Semantic.DeepDerivative(AlphaStatefulSet.Spec.Template, AlphaStatefulSetOld.Spec.Template) {
+	if apiequality.Semantic.DeepDerivative(
+		AlphaStatefulSet.Spec.Template,
+		AlphaStatefulSetOld.Spec.Template) {
 		return nil
 	}
 
 	statefulSetUpdate := *AlphaStatefulSetOld
 	statefulSetUpdate.Spec = AlphaStatefulSet.Spec
-	glog.Infof("udpating underlying stateful set for dgraph alpha")
+	glog.Infof("updating underlying stateful set for dgraph alpha")
 	_, err = k8s.UpdateStatefulSet(am.k8sClient, ns, &statefulSetUpdate)
 
 	return err

@@ -70,8 +70,8 @@ func NewRatelService(dc *v1alpha1.DgraphCluster) *corev1.Service {
 	}
 }
 
-// NewRatelDeployment constructs a K8s Deployment object for dgraph Ratel from the provided DgraphCluster
-// configuration.
+// NewRatelDeployment constructs a K8s Deployment object for dgraph Ratel from
+// the provided DgraphCluster configuration.
 func NewRatelDeployment(dc *v1alpha1.DgraphCluster) *appsv1.Deployment {
 	ns := dc.GetNamespace()
 	name := dc.GetName()

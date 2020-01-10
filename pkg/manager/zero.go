@@ -149,7 +149,7 @@ func (zm *ZeroManager) syncZeroServiceWithDgraphCluster(dc *v1alpha1.DgraphClust
 
 	headlessSVCUpdate := *oldHeadlessSVC
 	headlessSVCUpdate.Spec = headlessSVC.Spec
-	glog.Info("zero-manager: udpating headless service for dgraph zero")
+	glog.Info("zero-manager: updating headless service for dgraph zero")
 	_, err = k8s.UpdateService(zm.k8sClient, ns, &headlessSVCUpdate)
 
 	return err
@@ -180,7 +180,7 @@ func (zm *ZeroManager) syncZeroStatefulSetWithDgraphCluster(dc *v1alpha1.DgraphC
 
 	statefulSetUpdate := *zeroStatefulSetOld
 	statefulSetUpdate.Spec = zeroStatefulSet.Spec
-	glog.Infof("udpating underlying stateful set for dgraph zero")
+	glog.Infof("updating underlying stateful set for dgraph zero")
 	_, err = k8s.UpdateStatefulSet(zm.k8sClient, ns, &statefulSetUpdate)
 
 	return err

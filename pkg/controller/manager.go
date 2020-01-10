@@ -186,8 +186,12 @@ func (cm *Manager) onStart(ctx context.Context) {
 		glog.Info("exitting onStart method...")
 	}()
 
-	dgraphClusterInformer := informers.NewSharedInformerFactory(cm.dgraphClient, defaults.InformerResyncDuration)
-	k8sInformerFactory := k8sinformers.NewSharedInformerFactory(cm.k8sClient, defaults.InformerResyncDuration)
+	dgraphClusterInformer := informers.NewSharedInformerFactory(
+		cm.dgraphClient,
+		defaults.InformerResyncDuration)
+	k8sInformerFactory := k8sinformers.NewSharedInformerFactory(
+		cm.k8sClient,
+		defaults.InformerResyncDuration)
 
 	// Add dgraph controller to registered controller list of the controller manager.
 	cm.registeredControllers = append(cm.registeredControllers, dc.NewController(
@@ -210,6 +214,6 @@ func (cm *Manager) onStart(ctx context.Context) {
 		go ctrl.Run(ctx)
 	}
 
-	glog.Info("all controllers confiugured and are now running.")
+	glog.Info("all controllers configured and are now running.")
 	<-ctx.Done()
 }

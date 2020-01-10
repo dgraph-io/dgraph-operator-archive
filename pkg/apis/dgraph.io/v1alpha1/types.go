@@ -33,10 +33,10 @@ var (
 	// ClusterStateCreating represents that the cluster is being created.
 	ClusterStateCreating ClusterState = "creating"
 
-	// ClusterStateRunning represents that the cluster is being udpated.
+	// ClusterStateRunning represents that the cluster is being updated.
 	ClusterStateRunning ClusterState = "running"
 
-	// ClusterStateUpdating represents that the cluster is being udpated.
+	// ClusterStateUpdating represents that the cluster is being updated.
 	ClusterStateUpdating ClusterState = "updating"
 )
 
@@ -278,7 +278,8 @@ type ZeroClusterSpec struct {
 	Config *ZeroConfig `json:"config,omitempty"`
 }
 
-// ShardReplicaCount returns the zero replica count to be used for deployment of the dgraph component.
+// ShardReplicaCount returns the zero replica count to be used for deployment
+// of the dgraph component.
 func (zcs *ZeroClusterSpec) ShardReplicaCount() int32 {
 	if zcs.Config == nil {
 		return zcs.Replicas
@@ -344,12 +345,14 @@ func (dcs *DgraphComponentSpec) Image() string {
 	return fmt.Sprintf("%s:%s", dcs.BaseImage, dcs.Version)
 }
 
-// PodImagePullPolicy returns the image pull policy to be used for deployment of the dgraph component.
+// PodImagePullPolicy returns the image pull policy to be used for deployment
+// of the dgraph component.
 func (dcs *DgraphComponentSpec) PodImagePullPolicy() corev1.PullPolicy {
 	return *dcs.ImagePullPolicy
 }
 
-// ResourceRequirements returns the resource requirements to be used for deployment of the dgraph component.
+// ResourceRequirements returns the resource requirements to be used for deployment
+// of the dgraph component.
 func (dcs *DgraphComponentSpec) ResourceRequirements() corev1.ResourceRequirements {
 	if dcs.Resources == nil {
 		return corev1.ResourceRequirements{}

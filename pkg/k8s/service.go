@@ -32,7 +32,8 @@ func CreateNewService(k8sClient kubernetes.Interface, namespace string, svc *cor
 }
 
 // UpdateService updates the service in the kubernetes cluster.
-func UpdateService(k8sClient kubernetes.Interface, namespace string, svc *corev1.Service) (*corev1.Service, error) {
+func UpdateService(k8sClient kubernetes.Interface, namespace string,
+	svc *corev1.Service) (*corev1.Service, error) {
 	var updatedSvc *corev1.Service
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		var updateErr error

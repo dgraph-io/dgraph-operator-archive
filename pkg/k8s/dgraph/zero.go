@@ -105,7 +105,10 @@ func NewZeroStatefulSet(dc *v1alpha1.DgraphCluster) *appsv1.StatefulSet {
 	clusterID := dc.Spec.GetClusterID()
 
 	ssName := utils.DgraphZeroMemberName(clusterID, name)
-	headlessServiceName := fmt.Sprintf("%s%s%s", ssName, defaults.K8SDelimeter, defaults.HeadlessServiceSuffix)
+	headlessServiceName := fmt.Sprintf("%s%s%s",
+		ssName,
+		defaults.K8SDelimeter,
+		defaults.HeadlessServiceSuffix)
 	storageClassName := dc.Spec.ZeroCluster.PersistentStorage.StorageClassName
 	shardReplicaCount := dc.Spec.ZeroCluster.ShardReplicaCount()
 	zeroLabels := DefaultZeroLabels(ssName)
@@ -113,6 +116,7 @@ func NewZeroStatefulSet(dc *v1alpha1.DgraphCluster) *appsv1.StatefulSet {
 	replicaCount := dc.Spec.ZeroCluster.Replicas
 	partitionCount := dc.Spec.ZeroCluster.Replicas
 
+	// nolint
 	zeroRunCmd := fmt.Sprintf(`set -ex
 [[ $(hostname) =~ -([0-9]+)$ ]] || exit 1
 ordinal=${BASH_REMATCH[1]}

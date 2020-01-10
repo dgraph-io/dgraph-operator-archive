@@ -43,7 +43,7 @@ var (
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"resources":       resourceRequiementsSchema,
+			"resources":       resourceRequirementsSchema,
 		},
 		Required: []string{
 			"clusterID",
@@ -73,7 +73,7 @@ var (
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"resources":       resourceRequiementsSchema,
+			"resources":       resourceRequirementsSchema,
 
 			"replicas": {
 				Description: "Number of replicas to run for alpha in the cluster.",
@@ -107,7 +107,7 @@ var (
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"resources":       resourceRequiementsSchema,
+			"resources":       resourceRequirementsSchema,
 
 			"replicas": {
 				Description: "Number of replicas to run for alpha in the cluster.",
@@ -141,7 +141,7 @@ var (
 			"version":         dgraphComponentProperties["version"],
 			"imagePullPolicy": dgraphComponentProperties["imagePullPolicy"],
 			"annotations":     dgraphComponentProperties["annotations"],
-			"resources":       resourceRequiementsSchema,
+			"resources":       resourceRequirementsSchema,
 
 			"replicas": {
 				Description: "Number of replicas to run for ratel in the cluster.",
@@ -156,7 +156,7 @@ var (
 			Type:        "string",
 		},
 		"serviceType": {
-			Description: "Kubernetes service type to use for the Dgraph cluster component" +
+			Description: "Kubernetes service type to use for the Dgraph cluster component " +
 				"(one of ClusterIP, LoadBalancer, NodePort).",
 			Type: "string",
 		},
@@ -174,20 +174,22 @@ var (
 		},
 	}
 
-	resourceRequiementsSchema = apiextv1.JSONSchemaProps{
+	resourceRequirementsSchema = apiextv1.JSONSchemaProps{
 		Description: "Resource requirements for the component.",
 		Type:        "object",
 		Properties: map[string]apiextv1.JSONSchemaProps{
 			"limits": {
 				Description: "Limits describes the maximum amount of compute resources " +
-					"allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/.",
+					"allowed. More info: " +
+					" https://k8s.io/docs/concepts/configuration/manage-compute-resources-container/.",
 				Type: "object",
 			},
 			"requests": {
-				Description: "Requests describes the minimum amount of compute resources" +
-					"required. If Requests is omitted for a container, it defaults" +
-					"to Limits if that is explicitly specified, otherwise to an implementation-defined" +
-					"value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
+				Description: "Requests describes the minimum amount of compute resources " +
+					"required. If Requests is omitted for a container, it defaults " +
+					"to Limits if that is explicitly specified, otherwise to an implementation-defined " +
+					"value. More info: " +
+					" https://k8s.io/docs/concepts/configuration/manage-compute-resources-container/",
 				Type: "object",
 			},
 		},
@@ -195,7 +197,7 @@ var (
 
 	dgraphPersistentStorageProperties = map[string]apiextv1.JSONSchemaProps{
 		"requests": {
-			Description: resourceRequiementsSchema.Properties["requests"].Description,
+			Description: resourceRequirementsSchema.Properties["requests"].Description,
 			Type:        "object",
 			Required: []string{
 				"storage",

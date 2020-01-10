@@ -78,8 +78,8 @@ func NewAlphaService(dc *v1alpha1.DgraphCluster) *corev1.Service {
 	}
 }
 
-// NewAlphaHeadlessService constructs a K8s headless service object for dgraph Alpha from the provided
-// DgraphCluster configuration.
+// NewAlphaHeadlessService constructs a K8s headless service object for dgraph Alpha
+// from the provided DgraphCluster configuration.
 func NewAlphaHeadlessService(dc *v1alpha1.DgraphCluster) *corev1.Service {
 	svc := NewAlphaService(dc)
 
@@ -106,7 +106,10 @@ func NewAlphaStatefulSet(dc *v1alpha1.DgraphCluster) *appsv1.StatefulSet {
 
 	ssName := utils.DgraphAlphaMemberName(clusterID, name)
 	zeroMemberName := utils.DgraphZeroMemberName(clusterID, name)
-	headlessServiceName := fmt.Sprintf("%s%s%s", ssName, defaults.K8SDelimeter, defaults.HeadlessServiceSuffix)
+	headlessServiceName := fmt.Sprintf("%s%s%s",
+		ssName,
+		defaults.K8SDelimeter,
+		defaults.HeadlessServiceSuffix)
 	storageClassName := dc.Spec.AlphaCluster.PersistentStorage.StorageClassName
 
 	lruMB := dc.Spec.AlphaCluster.LruMB()
@@ -117,7 +120,7 @@ func NewAlphaStatefulSet(dc *v1alpha1.DgraphCluster) *appsv1.StatefulSet {
 
 	replicaCount := dc.Spec.AlphaCluster.Replicas
 	partitionCount := dc.Spec.AlphaCluster.Replicas
-
+	// nolint
 	AlphaRunCmd := fmt.Sprintf(`set -ex
 dgraph alpha --my=$(hostname -f):7080 --lru_mb %d --zero %s-0.%s-headless.${POD_NAMESPACE}.svc.cluster.local:5080
 `, lruMB, zeroMemberName, zeroMemberName)

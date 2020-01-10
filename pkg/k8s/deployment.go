@@ -24,7 +24,8 @@ import (
 
 // CreateNewDeployment creates a new Kubernetes Deployment for the provided
 // Deployment object.
-func CreateNewDeployment(k8sClient kubernetes.Interface, namespace string, svc *appsv1.Deployment) error {
+func CreateNewDeployment(k8sClient kubernetes.Interface, namespace string,
+	svc *appsv1.Deployment) error {
 	_, err := k8sClient.AppsV1().
 		Deployments(namespace).
 		Create(svc)
@@ -48,7 +49,8 @@ func UpdateDeployment(k8sClient kubernetes.Interface, namespace string,
 }
 
 // DeleteDeployment deletes a kubernetes Deployment from the cluster.
-func DeleteDeployment(k8sClient kubernetes.Interface, namespace string, svc *appsv1.Deployment) error {
+func DeleteDeployment(k8sClient kubernetes.Interface, namespace string,
+	svc *appsv1.Deployment) error {
 	return k8sClient.AppsV1().
 		Deployments(namespace).
 		Delete(svc.Name, nil)

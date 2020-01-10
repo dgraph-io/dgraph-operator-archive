@@ -184,7 +184,8 @@ func (dc *Controller) Run(ctx context.Context) {
 
 	// Wait for CRD to be ready, skip if any error occurs.
 	if err := k8s.WaitForCRD(dgraphio.DgraphClusterCRDName); err != nil {
-		glog.Warningf("dgraph-cluster-controller: error while waiting for CRD to be ready: %s\nignoring failure", err)
+		glog.Warningf("dgraph-cluster-controller: error while waiting for CRD "+
+			"to be ready: %s\nignoring failure", err)
 	}
 
 	glog.Info("dgraph-cluster-controller: waiting for informer cache to sync")
@@ -241,7 +242,8 @@ func (dc *Controller) processNextWorkItem() bool {
 		// Forget here else we'd go into a loop of attempting to
 		// process a work item that is invalid.
 		dc.workqueue.Forget(obj)
-		utilruntime.HandleError(fmt.Errorf("dgraph-cluster-controller: expected string in workqueue but got %#v", obj))
+		utilruntime.HandleError(fmt.Errorf("dgraph-cluster-controller: expected string in "+
+			"workqueue but got %#v", obj))
 		return true
 	}
 
@@ -250,7 +252,9 @@ func (dc *Controller) processNextWorkItem() bool {
 		// Put the item back on the workqueue to handle any transient errors.
 		// This item we be retried at later point of time.
 		dc.workqueue.AddRateLimited(objKey)
-		err = fmt.Errorf("dgraph-cluster-controller: error syncing '%s': %s, requeuing", objKey, err.Error())
+		err = fmt.Errorf("dgraph-cluster-controller: error syncing '%s': %s, requeuing",
+			objKey,
+			err.Error())
 	} else {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
@@ -264,7 +268,9 @@ func (dc *Controller) processNextWorkItem() bool {
 // Syncs the DgraphCluster resource represented by `key`
 func (dc *Controller) sync(key string) error {
 	startTime := time.Now()
-	defer glog.Infof("dgraph-cluster-controller: DgraphCluster sync done %q (%v)", key, time.Since(startTime))
+	defer glog.Infof("dgraph-cluster-controller: DgraphCluster sync done %q (%v)",
+		key,
+		time.Since(startTime))
 
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -293,7 +299,8 @@ func (dc *Controller) sync(key string) error {
 	// we got from the kubernetes API server.
 	err = dc.UpdateDgraphCluster(cluster.DeepCopy())
 	if err != nil {
-		glog.Errorf("dgraph-cluster-controller: error while updating dgraph cluster with provided specification: %s", err)
+		glog.Errorf("dgraph-cluster-controller: error while updating dgraph cluster "+
+			"with provided specification: %s", err)
 	}
 
 	return err
@@ -303,7 +310,8 @@ func (dc *Controller) sync(key string) error {
 func (dc *Controller) enqueueObj(obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("dgraph-cluster-controller: cound't get key for object %+v: %v", obj, err))
+		utilruntime.HandleError(fmt.Errorf("dgraph-cluster-controller: cound't get "+
+			"key for object %+v: %v", obj, err))
 		return
 	}
 	glog.Infof("dgraph-cluster-controller: enqueuing %q in workqueue", key)

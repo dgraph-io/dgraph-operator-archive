@@ -24,7 +24,8 @@ import (
 
 // CreateNewStatefulSet creates a new Kubernetes StatefulSet for the provided
 // StatefulSet object.
-func CreateNewStatefulSet(k8sClient kubernetes.Interface, namespace string, svc *appsv1.StatefulSet) error {
+func CreateNewStatefulSet(k8sClient kubernetes.Interface, namespace string,
+	svc *appsv1.StatefulSet) error {
 	_, err := k8sClient.AppsV1().
 		StatefulSets(namespace).
 		Create(svc)
@@ -48,7 +49,8 @@ func UpdateStatefulSet(k8sClient kubernetes.Interface, namespace string,
 }
 
 // DeleteStatefulSet deletes a kubernetes StatefulSet from the cluster.
-func DeleteStatefulSet(k8sClient kubernetes.Interface, namespace string, svc *appsv1.StatefulSet) error {
+func DeleteStatefulSet(k8sClient kubernetes.Interface, namespace string,
+	svc *appsv1.StatefulSet) error {
 	return k8sClient.AppsV1().
 		StatefulSets(namespace).
 		Delete(svc.Name, nil)
