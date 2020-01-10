@@ -1,0 +1,627 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: dgraphclusters.dgraph.io
+spec:
+  group: dgraph.io
+  names:
+    kind: DgraphCluster
+    listKind: DgraphClusterList
+    plural: dgraphclusters
+    singular: dgraphcluster
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: DgraphCluster is a Kubernetes custom resource which represents
+        a dgraph cluster.
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: Specification of the Dgraph cluster to create in the k8s cluster.
+          properties:
+            alpha:
+              description: Cluster specification for dgraph alpha components.
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  description: Annotations of the component.
+                  type: object
+                baseImage:
+                  description: Base image of the component
+                  type: string
+                config:
+                  description: Config is the configuration of the dgraph component.
+                  properties:
+                    jaegerCollector:
+                      description: URL of the jaeger collector for dgraph alpha and
+                        zero components.
+                      type: string
+                    lruMB:
+                      description: LruMB is the value of lrumb flag for dgraph alpha.
+                      format: int32
+                      type: integer
+                  type: object
+                imagePullPolicy:
+                  description: ImagePullPolicy of the dgraph component.
+                  type: string
+                persistentStorage:
+                  description: Storage is the configuration for persistent storage
+                    for dgraph component.
+                  properties:
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: Resource requirements for dgraph persistent storage.
+                      type: object
+                    storageClassName:
+                      description: StorageClassName is the name of the storage class
+                        to use for the persistent volumes for the dgraph component.
+                      type: string
+                  type: object
+                replicas:
+                  description: Number of replicas to run in the cluster.
+                  format: int32
+                  type: integer
+                resources:
+                  description: Resource requirements of the components.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        type: string
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+                serviceType:
+                  description: ServiceType is type of service to create for the component.
+                    One of NodePort, ClusterIP, LoadBalancer. Defaults to ClusterIP.
+                  type: string
+                version:
+                  description: Version of the component. Override the cluster-level
+                    version if non-empty
+                  type: string
+              required:
+              - replicas
+              type: object
+            annotations:
+              additionalProperties:
+                type: string
+              description: Annotations of the component. Cluster level annotation
+                is not overridden by the component configuration rather merged with
+                the underlying specified annotations.
+              type: object
+            baseImage:
+              description: Base image to use for dgraph cluster individual components,
+                this can be overridden
+              type: string
+            clusterID:
+              description: ClusterID is the ID of the dgraph cluster deployed.
+              type: string
+            imagePullPolicy:
+              description: ImagePullPolicy of the dgraph component.
+              type: string
+            ratel:
+              description: Specification for dgraph ratel component for providing
+                UI.
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  description: Annotations of the component.
+                  type: object
+                baseImage:
+                  description: Base image of the component
+                  type: string
+                imagePullPolicy:
+                  description: ImagePullPolicy of the dgraph component.
+                  type: string
+                replicas:
+                  description: Number of replicas of ratel to run in the cluster.
+                  format: int32
+                  type: integer
+                resources:
+                  description: Resource requirements of the components.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        type: string
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+                serviceType:
+                  description: ServiceType is type of service to create for the component.
+                    One of NodePort, ClusterIP, LoadBalancer. Defaults to ClusterIP.
+                  type: string
+                version:
+                  description: Version of the component. Override the cluster-level
+                    version if non-empty
+                  type: string
+              required:
+              - replicas
+              type: object
+            resources:
+              description: Resource requirements of the components, this can be overridden
+                at component level.
+              properties:
+                limits:
+                  additionalProperties:
+                    type: string
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    type: string
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+            serviceType:
+              description: ServiceType is the type of kubernetes service to create
+                for the Cluster components.
+              type: string
+            version:
+              description: Version of the component. Override the cluster-level version
+                if non-empty
+              type: string
+            zero:
+              description: Cluster specification for dgraph zero components.
+              properties:
+                annotations:
+                  additionalProperties:
+                    type: string
+                  description: Annotations of the component.
+                  type: object
+                baseImage:
+                  description: Base image of the component
+                  type: string
+                config:
+                  description: Config is the configuration of the dgraph zero.
+                  properties:
+                    jaegerCollector:
+                      description: URL of the jaeger collector for dgraph alpha and
+                        zero components.
+                      type: string
+                    shardReplicaCount:
+                      description: ShardReplicaCount is the max number of replicas
+                        per data shard.
+                      format: int32
+                      type: integer
+                  type: object
+                imagePullPolicy:
+                  description: ImagePullPolicy of the dgraph component.
+                  type: string
+                persistentStorage:
+                  description: PersistentStorage is the configuration for persistent
+                    storage for dgraph component.
+                  properties:
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: Resource requirements for dgraph persistent storage.
+                      type: object
+                    storageClassName:
+                      description: StorageClassName is the name of the storage class
+                        to use for the persistent volumes for the dgraph component.
+                      type: string
+                  type: object
+                replicas:
+                  description: Number of replicas to run in the cluster.
+                  format: int32
+                  type: integer
+                resources:
+                  description: Resource requirements of the components.
+                  properties:
+                    limits:
+                      additionalProperties:
+                        type: string
+                      description: 'Limits describes the maximum amount of compute
+                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                    requests:
+                      additionalProperties:
+                        type: string
+                      description: 'Requests describes the minimum amount of compute
+                        resources required. If Requests is omitted for a container,
+                        it defaults to Limits if that is explicitly specified, otherwise
+                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                      type: object
+                  type: object
+                serviceType:
+                  description: ServiceType is type of service to create for the component.
+                    One of NodePort, ClusterIP, LoadBalancer. Defaults to ClusterIP.
+                  type: string
+                version:
+                  description: Version of the component. Override the cluster-level
+                    version if non-empty
+                  type: string
+              required:
+              - replicas
+              type: object
+          required:
+          - alpha
+          - baseImage
+          - clusterID
+          - version
+          - zero
+          type: object
+        status:
+          description: Most recently observed status of the dgraph cluster
+          properties:
+            alpha:
+              description: Status of individual dgraph components like alpha, zero
+                and ratel.
+              properties:
+                members:
+                  additionalProperties:
+                    description: DgraphComponent represents a single member of either
+                      alpha or zero cluster.
+                    properties:
+                      componentURL:
+                        type: string
+                      health:
+                        type: boolean
+                      id:
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - componentURL
+                    - health
+                    - id
+                    - name
+                    type: object
+                  description: Members is the map of members in the alpha cluster.
+                  type: object
+                statefulSet:
+                  description: StatefulSet is the status of stateful set associated
+                    with the specified alpha cluster.
+                  properties:
+                    collisionCount:
+                      description: collisionCount is the count of hash collisions
+                        for the StatefulSet. The StatefulSet controller uses this
+                        field as a collision avoidance mechanism when it needs to
+                        create the name for the newest ControllerRevision.
+                      format: int32
+                      type: integer
+                    conditions:
+                      description: Represents the latest available observations of
+                        a statefulset's current state.
+                      items:
+                        description: StatefulSetCondition describes the state of a
+                          statefulset at a certain point.
+                        properties:
+                          lastTransitionTime:
+                            description: Last time the condition transitioned from
+                              one status to another.
+                            format: date-time
+                            type: string
+                          message:
+                            description: A human readable message indicating details
+                              about the transition.
+                            type: string
+                          reason:
+                            description: The reason for the condition's last transition.
+                            type: string
+                          status:
+                            description: Status of the condition, one of True, False,
+                              Unknown.
+                            type: string
+                          type:
+                            description: Type of statefulset condition.
+                            type: string
+                        required:
+                        - status
+                        - type
+                        type: object
+                      type: array
+                    currentReplicas:
+                      description: currentReplicas is the number of Pods created by
+                        the StatefulSet controller from the StatefulSet version indicated
+                        by currentRevision.
+                      format: int32
+                      type: integer
+                    currentRevision:
+                      description: currentRevision, if not empty, indicates the version
+                        of the StatefulSet used to generate Pods in the sequence [0,currentReplicas).
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration is the most recent generation
+                        observed for this StatefulSet. It corresponds to the StatefulSet's
+                        generation, which is updated on mutation by the API Server.
+                      format: int64
+                      type: integer
+                    readyReplicas:
+                      description: readyReplicas is the number of Pods created by
+                        the StatefulSet controller that have a Ready Condition.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: replicas is the number of Pods created by the StatefulSet
+                        controller.
+                      format: int32
+                      type: integer
+                    updateRevision:
+                      description: updateRevision, if not empty, indicates the version
+                        of the StatefulSet used to generate Pods in the sequence [replicas-updatedReplicas,replicas)
+                      type: string
+                    updatedReplicas:
+                      description: updatedReplicas is the number of Pods created by
+                        the StatefulSet controller from the StatefulSet version indicated
+                        by updateRevision.
+                      format: int32
+                      type: integer
+                  required:
+                  - replicas
+                  type: object
+              type: object
+            clusterID:
+              description: ClusterID is the ID of the dgraph cluster deployed.
+              type: string
+            ratel:
+              description: RatelStatus holds the status of dgraph ratel component.
+              properties:
+                deployment:
+                  description: Deployment is the status of stateful set associated
+                    with the specified ratel cluster.
+                  properties:
+                    availableReplicas:
+                      description: Total number of available pods (ready for at least
+                        minReadySeconds) targeted by this deployment.
+                      format: int32
+                      type: integer
+                    collisionCount:
+                      description: Count of hash collisions for the Deployment. The
+                        Deployment controller uses this field as a collision avoidance
+                        mechanism when it needs to create the name for the newest
+                        ReplicaSet.
+                      format: int32
+                      type: integer
+                    conditions:
+                      description: Represents the latest available observations of
+                        a deployment's current state.
+                      items:
+                        description: DeploymentCondition describes the state of a
+                          deployment at a certain point.
+                        properties:
+                          lastTransitionTime:
+                            description: Last time the condition transitioned from
+                              one status to another.
+                            format: date-time
+                            type: string
+                          lastUpdateTime:
+                            description: The last time this condition was updated.
+                            format: date-time
+                            type: string
+                          message:
+                            description: A human readable message indicating details
+                              about the transition.
+                            type: string
+                          reason:
+                            description: The reason for the condition's last transition.
+                            type: string
+                          status:
+                            description: Status of the condition, one of True, False,
+                              Unknown.
+                            type: string
+                          type:
+                            description: Type of deployment condition.
+                            type: string
+                        required:
+                        - status
+                        - type
+                        type: object
+                      type: array
+                    observedGeneration:
+                      description: The generation observed by the deployment controller.
+                      format: int64
+                      type: integer
+                    readyReplicas:
+                      description: Total number of ready pods targeted by this deployment.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: Total number of non-terminated pods targeted by
+                        this deployment (their labels match the selector).
+                      format: int32
+                      type: integer
+                    unavailableReplicas:
+                      description: Total number of unavailable pods targeted by this
+                        deployment. This is the total number of pods that are still
+                        required for the deployment to have 100% available capacity.
+                        They may either be pods that are running but not yet available
+                        or pods that still have not been created.
+                      format: int32
+                      type: integer
+                    updatedReplicas:
+                      description: Total number of non-terminated pods targeted by
+                        this deployment that have the desired template spec.
+                      format: int32
+                      type: integer
+                  type: object
+                members:
+                  additionalProperties:
+                    description: DgraphComponent represents a single member of either
+                      alpha or zero cluster.
+                    properties:
+                      componentURL:
+                        type: string
+                      health:
+                        type: boolean
+                      id:
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - componentURL
+                    - health
+                    - id
+                    - name
+                    type: object
+                  description: Members is the map of members in the zero cluster.
+                  type: object
+              type: object
+            state:
+              description: ClusterState represents the state of the cluster.
+              type: string
+            zero:
+              description: ZeroClusterStatus represents the cluster status of dgraph
+                alpha components.
+              properties:
+                members:
+                  additionalProperties:
+                    description: DgraphComponent represents a single member of either
+                      alpha or zero cluster.
+                    properties:
+                      componentURL:
+                        type: string
+                      health:
+                        type: boolean
+                      id:
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - componentURL
+                    - health
+                    - id
+                    - name
+                    type: object
+                  description: Members is the map of members in the zero cluster.
+                  type: object
+                statefulSet:
+                  description: StatefulSet is the status of stateful set associated
+                    with the specified zero cluster.
+                  properties:
+                    collisionCount:
+                      description: collisionCount is the count of hash collisions
+                        for the StatefulSet. The StatefulSet controller uses this
+                        field as a collision avoidance mechanism when it needs to
+                        create the name for the newest ControllerRevision.
+                      format: int32
+                      type: integer
+                    conditions:
+                      description: Represents the latest available observations of
+                        a statefulset's current state.
+                      items:
+                        description: StatefulSetCondition describes the state of a
+                          statefulset at a certain point.
+                        properties:
+                          lastTransitionTime:
+                            description: Last time the condition transitioned from
+                              one status to another.
+                            format: date-time
+                            type: string
+                          message:
+                            description: A human readable message indicating details
+                              about the transition.
+                            type: string
+                          reason:
+                            description: The reason for the condition's last transition.
+                            type: string
+                          status:
+                            description: Status of the condition, one of True, False,
+                              Unknown.
+                            type: string
+                          type:
+                            description: Type of statefulset condition.
+                            type: string
+                        required:
+                        - status
+                        - type
+                        type: object
+                      type: array
+                    currentReplicas:
+                      description: currentReplicas is the number of Pods created by
+                        the StatefulSet controller from the StatefulSet version indicated
+                        by currentRevision.
+                      format: int32
+                      type: integer
+                    currentRevision:
+                      description: currentRevision, if not empty, indicates the version
+                        of the StatefulSet used to generate Pods in the sequence [0,currentReplicas).
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration is the most recent generation
+                        observed for this StatefulSet. It corresponds to the StatefulSet's
+                        generation, which is updated on mutation by the API Server.
+                      format: int64
+                      type: integer
+                    readyReplicas:
+                      description: readyReplicas is the number of Pods created by
+                        the StatefulSet controller that have a Ready Condition.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: replicas is the number of Pods created by the StatefulSet
+                        controller.
+                      format: int32
+                      type: integer
+                    updateRevision:
+                      description: updateRevision, if not empty, indicates the version
+                        of the StatefulSet used to generate Pods in the sequence [replicas-updatedReplicas,replicas)
+                      type: string
+                    updatedReplicas:
+                      description: updatedReplicas is the number of Pods created by
+                        the StatefulSet controller from the StatefulSet version indicated
+                        by updateRevision.
+                      format: int32
+                      type: integer
+                  required:
+                  - replicas
+                  type: object
+              type: object
+          required:
+          - clusterID
+          - state
+          type: object
+      required:
+      - spec
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

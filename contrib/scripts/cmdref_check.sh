@@ -13,10 +13,10 @@ trap 'rm -rf $TMP_DIR' EXIT INT TERM
 
 ./dgraph-operator cmdref --directory=${TMP_DIR}
 
-if ! diff -r ${CMDREF_DIR} ${TMP_DIR}; then
+if ! $(diff -r ${CMDREF_DIR} ${TMP_DIR}); then
   echo "Detected a difference in the cmdref directory"
   echo "diff -r: `diff -r ${CMDREF_DIR} ${TMP_DIR}`"
-  echo "Please rerun 'make generate_cmdref' and commit your changes"
+  echo "Please rerun 'make generate-cmdref' and commit your changes"
   exit 1
 fi
 

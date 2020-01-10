@@ -14,3 +14,4 @@ script:
   - make build
   - make build-linux
   - make check-cmdref
+  - make check-crdgen
