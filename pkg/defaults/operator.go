@@ -21,11 +21,17 @@ import (
 )
 
 const (
+	// DgraphOperatorName is the name of the dgraph operator
+	DgraphOperatorName string = "dgraph-operator"
+
 	// OperatorHost is the default host for the operator server.
 	OperatorHost string = "0.0.0.0"
 
 	// OperatorPort is the default port that operator server listens to.
 	OperatorPort int = 7777
+
+	// WorkersCount is default number of workers to run for the operator controller.
+	WorkersCount int = 3
 
 	// LeaseLockName is the default value of lease lock we acquire when doing leader elections
 	// among the operators.

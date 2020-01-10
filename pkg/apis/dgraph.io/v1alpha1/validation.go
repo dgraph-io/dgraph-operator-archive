@@ -64,7 +64,6 @@ var (
 		Type:        "object",
 		Required: []string{
 			"replicas",
-			"config",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
 			"baseImage":       dgraphComponentProperties["baseImage"],
@@ -93,7 +92,6 @@ var (
 		Type:        "object",
 		Required: []string{
 			"replicas",
-			"config",
 		},
 		Properties: map[string]apiextv1.JSONSchemaProps{
 			"baseImage":       dgraphComponentProperties["baseImage"],
