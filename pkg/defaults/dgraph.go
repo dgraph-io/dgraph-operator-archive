@@ -18,13 +18,13 @@ package defaults
 
 const (
 	// AlphaMemberName is the component name of the alpha dgraph component.
-	AlphaMemberName string = "alpha"
+	AlphaMemberName string = "dgraph-alpha"
 
 	// ZeroMemberName is the component name of the Zero dgraph component.
-	ZeroMemberName string = "zero"
+	ZeroMemberName string = "dgraph-zero"
 
 	// RatelMemberName is the component name of the Ratel dgraph component.
-	RatelMemberName string = "ratel"
+	RatelMemberName string = "dgraph-ratel"
 
 	// AlphaMemberSuffix is the suffix to add to identifiers whenever required which
 	// represents Dgraph alpha related components.

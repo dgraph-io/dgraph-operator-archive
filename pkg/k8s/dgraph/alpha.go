@@ -132,8 +132,25 @@ dgraph alpha --my=$(hostname -f):7080 --lru_mb %d --zero %s-0.%s-headless.${POD_
 		},
 	}
 
+	podAffinity := &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: defaults.StatefulSetPodAntiAffinityWeight,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: defaults.StatefulSetPodAntiAffinityKey,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels.NewLabelSet().Component(defaults.AlphaMemberName),
+						},
+					},
+				},
+			},
+		},
+	}
+
 	// POD spec for the stateful set.
 	podSpec := corev1.PodSpec{
+		Affinity: podAffinity,
 		Containers: []corev1.Container{
 			{
 				Name:            ssName,

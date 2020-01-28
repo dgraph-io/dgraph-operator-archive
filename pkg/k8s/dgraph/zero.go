@@ -135,8 +135,25 @@ fi`, shardReplicaCount, ssName, headlessServiceName, shardReplicaCount)
 		},
 	}
 
+	podAffinity := &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: defaults.StatefulSetPodAntiAffinityWeight,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: defaults.StatefulSetPodAntiAffinityKey,
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels.NewLabelSet().Component(defaults.ZeroMemberName),
+						},
+					},
+				},
+			},
+		},
+	}
+
 	// POD spec for the stateful set.
 	podSpec := corev1.PodSpec{
+		Affinity: podAffinity,
 		Containers: []corev1.Container{
 			{
 				Name:            ssName,

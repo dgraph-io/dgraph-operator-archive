@@ -35,4 +35,12 @@ const (
 	// K8SDelimeter is the default delimeter for strings constructed for kubernetes context by
 	// dgraph.
 	K8SDelimeter string = "-"
+
+	// StatefulSetPodAntiAffinityWeight is the weight of the weighted affinity term associated
+	// with the dgraph stateful set component.
+	StatefulSetPodAntiAffinityWeight int32 = 100
+
+	// StatefulSetPodAntiAffinityKey is the topology key for the weighted affinity term associated
+	// with the dgraph stateful set component.
+	StatefulSetPodAntiAffinityKey string = "kubernetes.io/hostname"
 )
