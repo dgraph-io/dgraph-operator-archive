@@ -16,16 +16,23 @@ VENDORDIR := $(ROOTDIR)/vendor
 QUIET=@
 VERIFYARGS ?=
 
+GOOS ?=
 GOOS := $(if $(GOOS),$(GOOS),linux)
+GOARCH ?=
 GOARCH := $(if $(GOARCH),$(GOARCH),amd64)
 GOENV  := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO     := $(GOENV) go
 GO_BUILD := $(GO) build -trimpath
 
 # SET DOCKER_REGISTRY to change the docker registry
+DOCKER_REGISTRY ?=
 DOCKER_REGISTRY := $(if $(DOCKER_REGISTRY),"$(DOCKER_REGISTRY)/","")
+
 # Use git tag as the image tag if present, else use latest.
 IMAGE_TAG ?= $(shell git describe --always --tags 2> /dev/null || echo 'latest')
+
+CONTROLLER_GEN_BINARY := $(GOPATH)/bin/controller-gen
+CRDGEN_DIR ?= ./contrib/crd
 
 pkgs = $(shell $(GO) list ./... | grep -v vendor)
 
@@ -94,4 +101,17 @@ docker: build-linux
 docker-push: docker
 > $(QUIET)docker push "${DOCKER_REGISTRY}dgraph/dgraph-operator:${IMAGE_TAG}"
 
-.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref generate-k8s-api verify-generated-k8s-api docker docker-push
+crdgen: $(CONTROLLER_GEN_BINARY)
+> $(QUIET)echo '[*] Generating CRD definition for operator'
+> $(QUIET)$(CONTROLLER_GEN_BINARY) crd paths=./pkg/apis/dgraph.io/v1alpha1 output:crd:dir=$(CRDGEN_DIR)
+
+check-crdgen:
+> $(QUIET)echo '[*] Validating generated CRD for DgraphCluster.'
+> $(QUIET)./contrib/scripts/crdgen_check.sh
+
+$(CONTROLLER_GEN_BINARY):
+> $(QUIET)go install sigs.k8s.io/controller-tools/cmd/controller-gen
+
+.PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref \
+	generate-k8s-api verify-generated-k8s-api docker docker-push \
+	crd-gen

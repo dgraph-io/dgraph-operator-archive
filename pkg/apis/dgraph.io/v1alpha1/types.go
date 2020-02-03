@@ -54,7 +54,7 @@ type DgraphCluster struct {
 	Spec DgraphClusterSpec `json:"spec"`
 
 	// Most recently observed status of the dgraph cluster
-	Status DgraphClusterStatus `json:"status"`
+	Status DgraphClusterStatus `json:"status,omitempty"`
 }
 
 // AsOwnerReference returns the OwnerReference corresponding to DgraphCluster
@@ -171,7 +171,7 @@ type DgraphClusterSpec struct {
 	Version string `json:"version"`
 
 	// ServiceType is the type of kubernetes service to create for the Cluster components.
-	ServiceType string `jsong:"serviceType,omitempty"`
+	ServiceType string `json:"serviceType,omitempty"`
 
 	// ImagePullPolicy of the dgraph component.
 	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
@@ -182,7 +182,7 @@ type DgraphClusterSpec struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Resource requirements of the components, this can be overridden at component level.
-	Resources *corev1.ResourceRequirements `json:"resources,omiempty"`
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // AlphaServiceType returns the kubernetes service type to use for Alpha Cluster
