@@ -112,6 +112,10 @@ check-crdgen:
 $(CONTROLLER_GEN_BINARY):
 > $(QUIET)go install sigs.k8s.io/controller-tools/cmd/controller-gen
 
+unit-tests:
+> $(QUIET)echo '[*] Running unit tests for dgraph operators'
+> $(QUIET)$(GO) test ./...
+
 .PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref \
 	generate-k8s-api verify-generated-k8s-api docker docker-push \
-	crd-gen
+	crd-gen unit-tests

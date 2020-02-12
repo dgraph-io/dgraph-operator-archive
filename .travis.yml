@@ -15,3 +15,4 @@ script:
   - make build-linux
   - make check-cmdref
   - make check-crdgen
+  - make unit-tests
