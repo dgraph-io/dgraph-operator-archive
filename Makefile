@@ -112,6 +112,10 @@ check-crdgen:
 $(CONTROLLER_GEN_BINARY):
 > $(QUIET)go install sigs.k8s.io/controller-tools/cmd/controller-gen
 
+e2e-tests:
+> $(QUIET)echo '[*] Running E2E tests for dgraph-operator'
+> $(QUIET)./tests/e2e.sh
+
 .PHONY: build format govet fix-lint check-lint generate-cmdref check-cmdref \
 	generate-k8s-api verify-generated-k8s-api docker docker-push \
 	crd-gen
