@@ -38,7 +38,7 @@ check_ginkgo
 DOCKER_REGISTRY=${DOCKER_REGISTRY:-localhost:5000}
 IMAGE_TAG=${IMAGE_TAG:-latest}
 KUBECONFIG=${KUBECONFIG:-~/.kube/config}
-KUBE_WORKERS=${KUBE_WORKERS:-3}
+KUBE_WORKERS=${KUBE_WORKERS:-1}
 CLUSTER_NAME=${CLUSTER_NAME:-dgraph-operator}
 SKIP_BUILD=${SKIP_BUILD:-}
 REUSE_CLUSTER=${REUSE_CLUSTER:-}
@@ -66,7 +66,6 @@ function build_image() {
         return
     fi
     DOCKER_REGISTRY=$DOCKER_REGISTRY IMAGE_TAG=$IMAGE_TAG make docker
-    return
 }
 
 function run_kind_cluster_tests() {
@@ -101,14 +100,18 @@ EOF
             --name $CLUSTER_NAME \
             --image $KIND_NODE_IMAGE \
             --config $tmp \
-            --wait 240s
+            --wait 120s
     fi
 
     echo "[*] Loading docker image into the kind cluster"
-    $KIND_BIN load docker-image --name $CLUSTER_NAME \
-        $DOCKER_REGISTRY/dgraph/dgraph-operator:$IMAGE_TAG
+    $KIND_BIN load docker-image \
+        $DOCKER_REGISTRY/dgraph/dgraph-operator:$IMAGE_TAG \
+        --name $CLUSTER_NAME
 
-    ginkgo --focus " Runtime*" -v
+    ginkgo -v -- \
+        -kubeconfig $KUBECONFIG \
+        -operator-image $DOCKER_REGISTRY/dgraph/dgraph-operator:$IMAGE_TAG \
+        -context kind-$CLUSTER_NAME
 
     echo "[*] Cleaning up the cluster($KIND_NODE_IMAGE)"
     $KIND_BIN delete cluster --name $CLUSTER_NAME
@@ -118,11 +121,11 @@ function run_tests() {
     cd $TESTS_DIR
 
     echo "[*] Running operator tests on the kind cluster."
-    for ver in ${!kube_images[*]}; do
-        echo "[*] Working on cluster version: ${ver}"
-        KIND_NODE_IMAGE=${kube_images["${ver}"]}
+    for v in ${!kube_images[*]}; do
+        echo "[*] Working on cluster version: ${v}"
+        KIND_NODE_IMAGE=${kube_images["${v}"]}
 
-        run_kind_cluster_tests $ver $KIND_NODE_IMAGE
+        run_kind_cluster_tests $v $KIND_NODE_IMAGE
     done
 }
 
