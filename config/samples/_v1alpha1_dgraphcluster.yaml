@@ -1,0 +1,12 @@
+apiVersion: dgraph.io/v1alpha1
+kind: DgraphCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: dgraphcluster
+    app.kubernetes.io/instance: dgraphcluster-sample
+    app.kubernetes.io/part-of: dgraph-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: dgraph-operator
+  name: dgraphcluster-sample
+spec:
+  # TODO(user): Add fields here
