@@ -4,16 +4,16 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: dgraph.io
 layout:
-- go.kubebuilder.io/v4
+  - go.kubebuilder.io/v4
 projectName: dgraph-operator
-repo: github.com/dgraph/dgraph-operator
+repo: github.com/dgraph-io/dgraph-operator
 resources:
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: dgraph.io
-  kind: DgraphCluster
-  path: github.com/dgraph/dgraph-operator/api/v1alpha1
-  version: v1alpha1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    domain: dgraph.io
+    kind: DgraphCluster
+    path: github.com/dgraph/dgraph-operator/api/v1alpha1
+    version: v1alpha1
 version: "3"

@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	dgraphiov1alpha1 "github.com/dgraph/dgraph-operator/api/v1alpha1"
+	api "github.com/dgraph-io/dgraph-operator/api/v1alpha1"
 )
 
 // DgraphClusterReconciler reconciles a DgraphCluster object
@@ -36,6 +36,8 @@ type DgraphClusterReconciler struct {
 //+kubebuilder:rbac:groups=dgraph.io,resources=dgraphclusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=dgraph.io,resources=dgraphclusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=dgraph.io,resources=dgraphclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,9 +49,15 @@ type DgraphClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.0/pkg/reconcile
 func (r *DgraphClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Info("begin Reconcile", "req", req)
 
-	// TODO(user): your logic here
+	// Fetch the DgraphCluster instance
+	var dgraph api.DgraphCluster
+    if err := r.Get(ctx, req.NamespacedName, &dgraph); err != nil {
+        log.Error(err, "unable to fetch DgraphCluster")
+        return ctrl.Result{}, client.IgnoreNotFound(err)
+    }
 
 	return ctrl.Result{}, nil
 }
@@ -57,6 +65,6 @@ func (r *DgraphClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 // SetupWithManager sets up the controller with the Manager.
 func (r *DgraphClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dgraphiov1alpha1.DgraphCluster{}).
+		For(&api.DgraphCluster{}).
 		Complete(r)
 }

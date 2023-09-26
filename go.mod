@@ -1,4 +1,4 @@
-module github.com/dgraph/dgraph-operator
+module github.com/dgraph-io/dgraph-operator
 
 go 1.20
 
