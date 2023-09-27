@@ -7,6 +7,172 @@ metadata:
     app.kubernetes.io/part-of: dgraph-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: dgraph-operator
-  name: dgraphcluster-sample
+  name: test
 spec:
-  # TODO(user): Add fields here
+  size: 3
+  repository: 636790907320.dkr.ecr.us-west-2.amazonaws.com/gaas/dgraph
+  version: v23.0.0
+  alphaPod:
+    podTemplate:
+      metadata:
+        labels:
+          app: dgraph-alpha
+          monitor: "true"
+        name: dgraph-alpha
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - dgraph-alpha
+                  topologyKey: kubernetes.io/hostname
+                weight: 100
+        containers:
+          - command:
+              - bash
+              - -c
+              - |
+                set -ex
+                dgraph alpha --my=$(hostname -f):7080 --security "whitelist=0.0.0.0:255.255.255.255" --zero dgraph-zero-service.operator.svc.cluster.local:5080 --v=2
+            image: docker.io/dgraph/dgraph:v23.1.0
+            imagePullPolicy: IfNotPresent
+            name: dgraph-alpha
+            ports:
+              - containerPort: 8080
+                protocol: TCP
+              - containerPort: 9080
+                protocol: TCP
+            readinessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /probe/graphql
+                port: 8080
+                scheme: HTTP
+              periodSeconds: 5
+              successThreshold: 1
+              timeoutSeconds: 2
+            resources:
+              limits:
+                cpu: 1700m
+                memory: 13926Mi
+              requests:
+                cpu: 1700m
+                memory: 6963Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+              - mountPath: /dgraph
+                name: alphapvc
+        nodeSelector:
+          noderole: worker
+        priorityClassName: high
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+
+    volumeClaimTemplates:
+      - metadata:
+          annotations:
+            volume.alpha.kubernetes.io/storage-class: "gp2r"
+          name: "alphapvc"
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 30Gi
+  zeroPod:
+    podTemplate:
+      metadata:
+        labels:
+          app: dgraph-zero
+          monitor: "true"
+        name: dgraph-zero
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - dgraph-zero
+                  topologyKey: kubernetes.io/hostname
+                weight: 100
+        containers:
+          - command:
+              - bash
+              - -c
+              - |
+                set -ex
+                [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+                ordinal=${BASH_REMATCH[1]}
+                idx=$(($ordinal + 1))
+                if [[ $ordinal -eq 0 ]]; then
+                  exec dgraph zero --my=$(hostname -f):5080 --replicas 3 --raft "idx=$idx" --cid operator
+                else
+                exec dgraph zero --my=$(hostname -f):5080 --replicas 3 --raft "idx=$idx" --cid operator --peer zerostatefulset-0.dgraph-zero-service.operator.svc.cluster.local:5080
+                fi
+            image: docker.io/dgraph/dgraph:v23.1.0
+            imagePullPolicy: IfNotPresent
+            name: dgraph-zero
+            ports:
+              - containerPort: 5080
+                protocol: TCP
+              - containerPort: 6080
+                protocol: TCP
+            readinessProbe:
+              failureThreshold: 6
+              httpGet:
+                path: /health
+                port: 6080
+                scheme: HTTP
+              initialDelaySeconds: 15
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 5
+            resources:
+              limits:
+                memory: 3584Mi
+              requests:
+                cpu: 875m
+                memory: 3584Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+              - mountPath: /dgraph
+                name: zeropvc
+        dnsPolicy: ClusterFirst
+        initContainers:
+          - command:
+              - sh
+              - -c
+              - sysctl -w net.core.somaxconn=32768; sysctl -w net.ipv4.tcp_max_syn_backlog=10240
+            image: public.ecr.aws/y8b4w0i0/busybox:0.1
+            imagePullPolicy: IfNotPresent
+            name: init-sysctl
+            resources: {}
+            securityContext:
+              privileged: true
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+        nodeSelector:
+          noderole: worker
+        priorityClassName: high
+    volumeClaimTemplates:
+      - metadata:
+          annotations:
+            volume.alpha.kubernetes.io/storage-class: gp2r
+          name: zeropvc
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi

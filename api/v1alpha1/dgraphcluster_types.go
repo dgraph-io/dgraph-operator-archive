@@ -17,24 +17,31 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // DgraphClusterSpec defines the desired state of DgraphCluster
 type DgraphClusterSpec struct {
+	// +optional
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=7
+
 	// Size is the expected size of the Dgraph cluster.
-	// The valid range of the size is from 1 to 7.
-	Size int `json:"size"`
+	Size *int32 `json:"size,omitempty"`
+
+	// +optional
+	// +kubebuilder:default="docker.io/dgraph/dgraph"
 
 	// Repository is the name of the repository that hosts
 	// Dgraph container images.
 	//
 	// By default, it is `docker.io/dgraph/dgraph`.
 	Repository string `json:"repository,omitempty"`
+
+	// +optional
+	// +kubebuilder:default="v23.1.0"
 
 	// Version is the expected version of the Dgraph cluster.
 	//
@@ -47,7 +54,7 @@ type DgraphClusterSpec struct {
 	//
 	// Updating Pod does not take effect on any existing alpha pods.
 	AlphaPod *PodPolicy `json:"alphaPod,omitempty"`
-	
+
 	// ZeroPod defines the policy to create pod for the zero pod.
 	//
 	// Updating Pod does not take effect on any existing zero pods.
@@ -58,9 +65,12 @@ type DgraphClusterSpec struct {
 type PodPolicy struct {
 	// Shortest path for configuring the pod.
 	// TO-DO: Abstract this out better.
-	v1.PodSpec `json:",inline"`
-	Labels map[string]string `json:"labels,omitempty"`
-	PersistentVolumeClaimSpec *v1.PersistentVolumeClaimSpec `json:"persistentVolumeClaimSpec,omitempty"`
+
+	// PodTemplate provides customisation options (labels, annotations, affinity rules, resource requests, and so on) for the Pods belonging to this NodeSet.
+	PodTemplate corev1.PodTemplateSpec `json:"podTemplate"`
+
+	// +optional
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
 type ClusterPhase string
@@ -83,13 +93,13 @@ type MembersStatus struct {
 // DgraphClusterStatus defines the observed state of DgraphCluster
 type DgraphClusterStatus struct {
 	// Phase is the cluster running phase
-	Phase  ClusterPhase `json:"phase"`
+	Phase ClusterPhase `json:"phase"`
 
 	// Size is the current size of the cluster
-	Size int `json:"size"`
+	Size int32 `json:"size"`
 
 	Alphas MembersStatus `json:"alphas"`
-	Zeros MembersStatus `json:"zeros"`
+	Zeros  MembersStatus `json:"zeros"`
 
 	// CurrentVersion is the current cluster version
 	CurrentVersion string `json:"currentVersion"`
@@ -98,6 +108,7 @@ type DgraphClusterStatus struct {
 	TargetVersion string `json:"targetVersion"`
 }
 
+//+kubebuilder:resource:shortName="dgc"
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
